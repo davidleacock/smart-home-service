@@ -7,7 +7,7 @@ import java.util.UUID
 trait Device {
   def id: UUID
   def deviceType: DeviceType
-  def updated(newValue: String): Device
+  def updated(newValue: Int): Device
 }
 
 trait DeviceType
@@ -18,10 +18,11 @@ case object Thermostat extends DeviceType
 case class Thermostat(
   id: UUID,
   deviceType: DeviceType = Thermostat,
-  value: String)
+  value: Int)
     extends Device {
-  override def updated(newValue: String): Device = {
-    if (!newValue.equals("error")) {
+  override def updated(newValue: Int): Device = {
+    // arbitrary error value
+    if (!newValue.equals(999)) {
       this.copy(value = newValue)
     } else this
   }
