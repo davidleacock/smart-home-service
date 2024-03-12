@@ -1,6 +1,6 @@
 package repo
 
-import domain.SmartHomeService.Event
+import service.SmartHomeService.Event
 
 import java.util.UUID
 

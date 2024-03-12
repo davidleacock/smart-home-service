@@ -3,7 +3,7 @@ package service
 import cats.data.State
 import cats.effect.IO
 import cats.implicits.toTraverseOps
-import domain.SmartHomeService.{AddDevice, Command, DeviceAdded, Event, SmartHomeResult, Success}
+import service.SmartHomeService.{AddDevice, Command, DeviceAdded, Event, SmartHomeResult, Success}
 import domain._
 import repo.SmartHomeEventRepository
 
@@ -46,5 +46,4 @@ class SmartHomeServiceImpl(repository: SmartHomeEventRepository[IO])
         )
     }
   }
-
 }

@@ -1,7 +1,7 @@
 package repo.impl
 
 import cats.effect.IO
-import domain.SmartHomeService.Event
+import service.SmartHomeService.Event
 import repo.SmartHomeEventRepository
 
 import java.util.UUID
