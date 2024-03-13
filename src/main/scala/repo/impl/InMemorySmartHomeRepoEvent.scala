@@ -15,12 +15,11 @@ class InMemorySmartHomeRepoEvent extends SmartHomeEventRepository[IO] {
   override def persistEvent(homeId: UUID, event: Event): IO[Unit] = IO {
     storage.get(homeId) match {
       case Some(events) => events :+ event
-      case None => storage + (homeId -> List(event))
+      case None         => storage + (homeId -> List(event))
     }
   }
 
-  override def retrieveEvents(homeId: UUID): IO[List[Event]] =
-    IO {
-      storage.getOrElse(homeId, List.empty)
-    }
+  override def retrieveEvents(homeId: UUID): IO[List[Event]] = IO {
+    storage.getOrElse(homeId, List.empty)
+  }
 }
