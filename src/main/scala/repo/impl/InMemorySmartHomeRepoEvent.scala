@@ -11,6 +11,7 @@ class InMemorySmartHomeRepoEvent extends SmartHomeEventRepository[IO] {
 
   private val storage: mutable.Map[UUID, List[Event]] = mutable.Map.empty
 
+  // ! Investigate Ref usage for better concurrency
   override def persistEvent(homeId: UUID, event: Event): IO[Unit] = IO {
     storage.get(homeId) match {
       case Some(events) => events :+ event
