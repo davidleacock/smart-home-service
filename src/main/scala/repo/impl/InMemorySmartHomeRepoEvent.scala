@@ -5,14 +5,21 @@ import service.SmartHomeService.Event
 import repo.SmartHomeEventRepository
 
 import java.util.UUID
+import scala.collection.mutable
 
 class InMemorySmartHomeRepoEvent extends SmartHomeEventRepository[IO] {
 
-//  private val storage: mutable.Map[UUID, SmartHome] = mutable.Map.empty
+  private val storage: mutable.Map[UUID, List[Event]] = mutable.Map.empty
 
-  // TODO figure out mutable storage for this event store
+  override def persistEvent(homeId: UUID, event: Event): IO[Unit] = IO {
+    storage.get(homeId) match {
+      case Some(events) => events :+ event
+      case None => storage + (homeId -> List(event))
+    }
+  }
 
-  override def persistEvent(homeId: UUID, event: Event): IO[Unit] = ???
-
-  override def retrieveEvents(homeId: UUID): IO[List[Event]] = ???
+  override def retrieveEvents(homeId: UUID): IO[List[Event]] =
+    IO {
+      storage.getOrElse(homeId, List.empty)
+    }
 }
