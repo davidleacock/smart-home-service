@@ -2,7 +2,7 @@ package service
 
 import cats.data.State
 import cats.effect.IO
-import cats.implicits.toTraverseOps
+import cats.implicits.{toFoldableOps, toTraverseOps}
 import domain._
 import repo.SmartHomeEventRepository
 import service.SmartHomeService._
@@ -26,12 +26,12 @@ class SmartHomeServiceImpl(repository: SmartHomeEventRepository[IO])
       // Create initial SmartHome State
       initialState = SmartHome(homeId, List.empty)
       // Replay events to build current State
-      currentState = events
-        .traverse(applyEventsToState)
-        .runS(initialState)
-        .value
+      currentState = applyEvents(events).runS(initialState).value
       // Apply command to current state and return event
-      result <- handleCommand(command, currentState, repository)
+      result <- handleCommand(command, currentState).flatMap {
+        case (Some(event), result) => repository.persistEvent(homeId, event).as(result)
+        case (None, result) => IO.pure(result)
+      }
     } yield result
   }
 
@@ -41,24 +41,24 @@ class SmartHomeServiceImpl(repository: SmartHomeEventRepository[IO])
   private def handleCommand(
     command: Command,
     state: SmartHome,
-    repository: SmartHomeEventRepository[IO]
-  ): IO[SmartHomeResult] = IO {
+  ): IO[(Option[Event], SmartHomeResult)] = {
     command match {
       case AddDevice(homeId, device) => {
-        repository.persistEvent(homeId, DeviceAdded(homeId, device))
-        Success
+        IO.pure((Some(DeviceAdded(homeId, device)), Success))
       }
 
       case SmartHomeService.UpdateDevice(homeId, deviceId, newValue) => {
         val device = state.devices.find(_.id == deviceId).get.updated(newValue)
-        repository.persistEvent(homeId, DeviceUpdated(homeId, device))
-        Success
+        IO.pure((Some(DeviceUpdated(homeId, device)), Success))
       }
 
       case SmartHomeService.GetSmartHome(homeId) =>
-        Result(s"Result from $homeId: ${state.devices}")
+        IO.pure(None, Result(s"Result from $homeId: ${state.devices}"))
     }
   }
+
+  private def applyEvents(events: List[Event]): State[SmartHome, Unit] =
+    events.traverse_(event => applyEventsToState(event))
 
   // ? do events need the homeId? I think its already set in
   private def applyEventsToState(event: Event): State[SmartHome, Unit] =

@@ -20,6 +20,7 @@ case class Thermostat(
   deviceType: DeviceType = Thermostat,
   value: Int)
     extends Device {
+
   override def updated(newValue: Int): Device = {
     // arbitrary error value
     if (!newValue.equals(999)) {
