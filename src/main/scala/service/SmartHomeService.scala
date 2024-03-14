@@ -21,6 +21,6 @@ object SmartHomeService {
 
   sealed trait SmartHomeResult
   case object Success extends SmartHomeResult
-  case object Failure extends SmartHomeResult
+  case class Failure(reason: String) extends SmartHomeResult
   case class Result(payload: String) extends SmartHomeResult
 }

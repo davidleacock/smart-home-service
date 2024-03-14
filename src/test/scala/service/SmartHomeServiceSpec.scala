@@ -5,7 +5,7 @@ import domain.Thermostat
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AsyncWordSpec
 import repo.impl.InMemorySmartHomeEventRepo
-import service.SmartHomeService.{AddDevice, DeviceUpdated, GetSmartHome, Result, Success, UpdateDevice}
+import service.SmartHomeService.{AddDevice, DeviceUpdated, Failure, GetSmartHome, Result, Success, UpdateDevice}
 
 import java.util.UUID
 
@@ -59,6 +59,24 @@ class SmartHomeServiceSpec
           case DeviceUpdated(_, device) => device.currValue shouldBe 10
           case _ => fail("most recent event isn't DeviceUpdated")
         }
+      }
+
+      test.assertNoException
+    }
+
+    "process an UpdateDevice command for a device that hasn't been updated by returning a Failure" in {
+      val test = for {
+        repo <- InMemorySmartHomeEventRepo.create
+        service = new SmartHomeServiceImpl(repo)
+        homeId = UUID.randomUUID()
+        deviceId = UUID.randomUUID()
+
+        updateResult <- service.processCommand(
+          homeId,
+          UpdateDevice(homeId, deviceId, 10)
+        )
+      } yield {
+        updateResult shouldBe Failure(s"Device $deviceId not found.")
       }
 
       test.assertNoException

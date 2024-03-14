@@ -2,7 +2,7 @@ package service
 
 import cats.data.State
 import cats.effect.IO
-import cats.implicits.{toFoldableOps, toTraverseOps}
+import cats.implicits.toFoldableOps
 import domain._
 import repo.SmartHomeEventRepository
 import service.SmartHomeService._
@@ -47,9 +47,11 @@ class SmartHomeServiceImpl(repository: SmartHomeEventRepository[IO])
         IO.pure((Some(DeviceAdded(homeId, device)), Success))
       }
 
-      case SmartHomeService.UpdateDevice(homeId, deviceId, newValue) => {
-        val device = state.devices.find(_.id == deviceId).get.updated(newValue)
-        IO.pure((Some(DeviceUpdated(homeId, device)), Success))
+      case SmartHomeService.UpdateDevice(homeId, deviceId, newValue) => IO {
+        state.devices.find(_.id == deviceId) match {
+          case Some(device) => (Some(DeviceUpdated(homeId, device.updated(newValue))), Success)
+          case None => (None, Failure(s"Device $deviceId not found."))
+        }
       }
 
       case SmartHomeService.GetSmartHome(homeId) =>
