@@ -11,13 +11,13 @@ trait SmartHomeService[F[_]] {
 
 object SmartHomeService {
   sealed trait Command
-  case class AddDevice(homeId: UUID, device: Device) extends Command
-  case class UpdateDevice(homeId: UUID, deviceId: UUID, newValue: Int) extends Command // TODO generalize the newValue
-  case class GetSmartHome(homeId: UUID) extends Command
+  case class AddDevice(device: Device) extends Command
+  case class UpdateDevice(deviceId: UUID, newValue: Int) extends Command // TODO generalize the newValue
+  case object GetSmartHome extends Command
 
   sealed trait Event
-  case class DeviceAdded(homeId: UUID, device: Device) extends Event
-  case class DeviceUpdated(homeId: UUID, device: Device) extends Event
+  case class DeviceAdded(device: Device) extends Event
+  case class DeviceUpdated(device: Device) extends Event
 
   sealed trait SmartHomeResult
   case object Success extends SmartHomeResult
