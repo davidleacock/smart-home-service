@@ -9,20 +9,15 @@ import service.SmartHomeService._
 
 import java.util.UUID
 
-class SmartHomeServiceImpl(repository: SmartHomeEventRepository[IO])
-    extends SmartHomeService[IO] {
+class SmartHomeServiceImpl(repository: SmartHomeEventRepository[IO]) extends SmartHomeService[IO] {
 
   override def processCommand(
     homeId: UUID,
     command: Command
-  ): IO[SmartHomeResult] = {
+  ): IO[SmartHomeResult] =
     for {
       // Retrieve list of events from repo
       events <- repository.retrieveEvents(homeId)
-
-      // ? I dont think we need the homeId after this, we've got all the events we need.
-      // ! Create ACL here? At least needs to happen before handleCommand
-
       // Create initial SmartHome State
       initialState = SmartHome(homeId, List.empty)
       // Replay events to build current State
@@ -30,55 +25,51 @@ class SmartHomeServiceImpl(repository: SmartHomeEventRepository[IO])
       // Apply command to current state and return event
       result <- handleCommand(command, currentState).flatMap {
         case (Some(event), result) => repository.persistEvent(homeId, event).as(result)
-        case (None, result) => IO.pure(result)
+        case (None, result)        => IO.pure(result)
       }
     } yield result
-  }
 
-  // ! Add validation
-  // ? How is the ID being used in all this?
-  // ? Any code duplication?
+  // ! Add validation predicated on state
   private def handleCommand(
     command: Command,
-    state: SmartHome,
-  ): IO[(Option[Event], SmartHomeResult)] = {
+    state: SmartHome
+  ): IO[(Option[Event], SmartHomeResult)] =
     command match {
-      case AddDevice(homeId, device) => {
-        IO.pure((Some(DeviceAdded(homeId, device)), Success))
-      }
+      case AddDevice(device) =>
+        IO.pure((Some(DeviceAdded(device)), Success))
 
-      case SmartHomeService.UpdateDevice(homeId, deviceId, newValue) => IO {
-        state.devices.find(_.id == deviceId) match {
-          case Some(device) => (Some(DeviceUpdated(homeId, device.updated(newValue))), Success)
-          case None => (None, Failure(s"Device $deviceId not found."))
+      case SmartHomeService.UpdateDevice(deviceId, newValue) =>
+        IO {
+          state.devices.find(_.id == deviceId) match {
+            case Some(device) => (Some(DeviceUpdated(device.updated(newValue))), Success)
+            case None         => (None, Failure(s"Device $deviceId not found."))
+          }
         }
-      }
 
-      case SmartHomeService.GetSmartHome(homeId) =>
-        IO.pure(None, Result(s"Result from $homeId: ${state.devices}"))
+      case SmartHomeService.GetSmartHome =>
+        IO.pure(None, Result(s"Result from ${state.homeId}: ${state.devices}"))
     }
-  }
 
+  // ! TODO clean up
   private def applyEvents(events: List[Event]): State[SmartHome, Unit] =
     events.traverse_(event => applyEventsToState(event))
 
-  // ? do events need the homeId? I think its already set in
   private def applyEventsToState(event: Event): State[SmartHome, Unit] =
     State.modify { state =>
       event match {
-        case DeviceAdded(_, device) =>
+        case DeviceAdded(device) =>
           state.copy(
             devices = state.devices :+ device
           )
 
-        case DeviceUpdated(_, updatedDevice) =>
+        case DeviceUpdated(updatedDevice) =>
           val updatedDevices = state
             .devices
-            .map(device => {
+            .map { device =>
               if (device.id == updatedDevice.id) {
                 updatedDevice
               } else device
-            })
+            }
 
           state.copy(devices = updatedDevices)
       }

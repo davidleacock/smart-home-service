@@ -9,10 +9,7 @@ import service.SmartHomeService.{AddDevice, DeviceUpdated, Failure, GetSmartHome
 
 import java.util.UUID
 
-class SmartHomeServiceSpec
-    extends AsyncWordSpec
-    with AsyncIOSpec
-    with Matchers {
+class SmartHomeServiceSpec extends AsyncWordSpec with AsyncIOSpec with Matchers {
 
   "SmartHomeService" should {
 
@@ -22,14 +19,12 @@ class SmartHomeServiceSpec
         service = new SmartHomeServiceImpl(repo)
         homeId = UUID.randomUUID()
         deviceId = UUID.randomUUID()
+        device = Thermostat(deviceId, value = 1)
 
-        addResult <- service.processCommand(
-          homeId,
-          AddDevice(homeId, Thermostat(deviceId, value = 1))
-        )
+        result <- service.processCommand(homeId, AddDevice(device))
         persistedEvents <- repo.retrieveEvents(homeId)
       } yield {
-        addResult shouldBe Success
+        result shouldBe Success
         persistedEvents should have size 1
       }
 
@@ -42,22 +37,17 @@ class SmartHomeServiceSpec
         service = new SmartHomeServiceImpl(repo)
         homeId = UUID.randomUUID()
         deviceId = UUID.randomUUID()
+        device = Thermostat(deviceId, value = 1)
 
-        _ <- service.processCommand(
-          homeId,
-          AddDevice(homeId, Thermostat(deviceId, value = 1))
-        )
-        updateResult <- service.processCommand(
-          homeId,
-          UpdateDevice(homeId, deviceId, 10)
-        )
+        _ <- service.processCommand(homeId, AddDevice(device))
+        result <- service.processCommand(homeId, UpdateDevice(deviceId, 10))
         persistedEvents <- repo.retrieveEvents(homeId)
       } yield {
-        updateResult shouldBe Success
+        result shouldBe Success
         persistedEvents should have size 2
         persistedEvents.tail.head match {
-          case DeviceUpdated(_, device) => device.currValue shouldBe 10
-          case _ => fail("most recent event isn't DeviceUpdated")
+          case DeviceUpdated(device) => device.currValue shouldBe 10
+          case _                     => fail("most recent event isn't DeviceUpdated")
         }
       }
 
@@ -71,13 +61,8 @@ class SmartHomeServiceSpec
         homeId = UUID.randomUUID()
         deviceId = UUID.randomUUID()
 
-        updateResult <- service.processCommand(
-          homeId,
-          UpdateDevice(homeId, deviceId, 10)
-        )
-      } yield {
-        updateResult shouldBe Failure(s"Device $deviceId not found.")
-      }
+        result <- service.processCommand(homeId, UpdateDevice(deviceId, 10))
+      } yield result shouldBe Failure(s"Device $deviceId not found.")
 
       test.assertNoException
     }
@@ -88,26 +73,17 @@ class SmartHomeServiceSpec
         service = new SmartHomeServiceImpl(repo)
         homeId = UUID.randomUUID()
         deviceId = UUID.randomUUID()
-
-        _ <- service.processCommand(
-          homeId,
-          AddDevice(homeId, Thermostat(deviceId, value = 1))
-        )
-        _ <- service.processCommand(
-          homeId,
-          UpdateDevice(homeId, deviceId, 10)
-        )
-        updateResult <- service.processCommand(
-          homeId,
-          UpdateDevice(homeId, deviceId, 20)
-        )
+        device = Thermostat(deviceId, value = 1)
+        _ <- service.processCommand(homeId, AddDevice(device))
+        _ <- service.processCommand(homeId, UpdateDevice(deviceId, 10))
+        result <- service.processCommand(homeId, UpdateDevice(deviceId, 20))
         persistedEvents <- repo.retrieveEvents(homeId)
       } yield {
-        updateResult shouldBe Success
+        result shouldBe Success
         persistedEvents should have size 3
         persistedEvents.last match {
-          case DeviceUpdated(_, device) => device.currValue shouldBe 20
-          case _ => fail("most recent event isn't DeviceUpdated")
+          case DeviceUpdated(device) => device.currValue shouldBe 20
+          case _                     => fail("most recent event isn't DeviceUpdated")
         }
       }
 
@@ -120,20 +96,12 @@ class SmartHomeServiceSpec
         service = new SmartHomeServiceImpl(repo)
         homeId = UUID.randomUUID()
         deviceId = UUID.randomUUID()
+        device = Thermostat(deviceId, value = 1)
 
-        _ <- service.processCommand(
-          homeId,
-          AddDevice(homeId, Thermostat(deviceId, value = 1))
-        )
-        _ <- service.processCommand(
-          homeId,
-          UpdateDevice(homeId, deviceId, 10)
-        )
-        result <- service.processCommand(homeId, GetSmartHome(homeId))
-      } yield {
-        result shouldBe Result(s"Result from $homeId: List(Thermostat($deviceId,Thermostat,10))")
-
-      }
+        _ <- service.processCommand(homeId, AddDevice(device))
+        _ <- service.processCommand(homeId, UpdateDevice(deviceId, 10))
+        result <- service.processCommand(homeId, GetSmartHome)
+      } yield result shouldBe Result(s"Result from $homeId: List(Thermostat($deviceId,Thermostat,10))")
 
       test.assertNoException
     }
