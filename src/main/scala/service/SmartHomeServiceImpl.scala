@@ -21,11 +21,11 @@ class SmartHomeServiceImpl(repository: SmartHomeEventRepository[IO]) extends Sma
       // Create initial SmartHome State
       initialState = SmartHome(homeId, List.empty)
       // Replay events to build current State
-      currentState = applyEvents(events).runS(initialState).value
+      currentState = buildState(events).runS(initialState).value
       // Apply command to current state and return event
       result <- handleCommand(command, currentState).flatMap {
-        case (Some(event), result) => repository.persistEvent(homeId, event).as(result)
-        case (None, result)        => IO.pure(result)
+        case (result, Some(event)) => repository.persistEvent(homeId, event).as(result)
+        case (result, None)        => IO.pure(result)
       }
     } yield result
 
@@ -33,45 +33,37 @@ class SmartHomeServiceImpl(repository: SmartHomeEventRepository[IO]) extends Sma
   private def handleCommand(
     command: Command,
     state: SmartHome
-  ): IO[(Option[Event], SmartHomeResult)] =
+  ): IO[(SmartHomeResult, Option[Event])] = IO {
     command match {
       case AddDevice(device) =>
-        IO.pure((Some(DeviceAdded(device)), Success))
+        (Success, Some(DeviceAdded(device)))
 
       case SmartHomeService.UpdateDevice(deviceId, newValue) =>
-        IO {
-          state.devices.find(_.id == deviceId) match {
-            case Some(device) => (Some(DeviceUpdated(device.updated(newValue))), Success)
-            case None         => (None, Failure(s"Device $deviceId not found."))
-          }
+        state.devices.find(_.id == deviceId) match {
+          case Some(device) => (Success, Some(DeviceUpdated(device.updated(newValue))))
+          case None         => (Failure(s"Device $deviceId not found."), None)
         }
 
       case SmartHomeService.GetSmartHome =>
-        IO.pure(None, Result(s"Result from ${state.homeId}: ${state.devices}"))
+        (Result(s"Result from ${state.homeId}: ${state.devices}"), None)
+    }
+  }
+
+  private def buildState(events: List[Event]): State[SmartHome, Unit] =
+    events.traverse_ { event =>
+      State.modify(eventToStateChange(event))
     }
 
-  // ! TODO clean up
-  private def applyEvents(events: List[Event]): State[SmartHome, Unit] =
-    events.traverse_(event => applyEventsToState(event))
+  private def eventToStateChange(event: Event): SmartHome => SmartHome = { case state @ SmartHome(_, devices) =>
+    event match {
+      case DeviceAdded(device)    => state.copy(devices = state.devices :+ device)
+      case DeviceUpdated(updated) => state.copy(devices = updateDevice(devices, _ => updated))
+    }
+  }
 
-  private def applyEventsToState(event: Event): State[SmartHome, Unit] =
-    State.modify { state =>
-      event match {
-        case DeviceAdded(device) =>
-          state.copy(
-            devices = state.devices :+ device
-          )
-
-        case DeviceUpdated(updatedDevice) =>
-          val updatedDevices = state
-            .devices
-            .map { device =>
-              if (device.id == updatedDevice.id) {
-                updatedDevice
-              } else device
-            }
-
-          state.copy(devices = updatedDevices)
-      }
+  private def updateDevice(devices: List[Device], updateFn: Device => Device): List[Device] =
+    devices.map {
+      case device if device.id == updateFn(device).id => updateFn(device)
+      case device                                     => device
     }
 }
