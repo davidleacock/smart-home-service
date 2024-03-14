@@ -8,6 +8,7 @@ trait Device {
   def id: UUID
   def deviceType: DeviceType
   def updated(newValue: Int): Device
+  def currValue: Int
 }
 
 trait DeviceType
@@ -27,4 +28,6 @@ case class Thermostat(
       this.copy(value = newValue)
     } else this
   }
+
+  override def currValue: Int = this.value
 }
