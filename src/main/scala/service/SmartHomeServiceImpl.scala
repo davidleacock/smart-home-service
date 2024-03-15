@@ -43,13 +43,13 @@ class SmartHomeServiceImpl(repository: SmartHomeEventRepository[IO]) extends Sma
     command match {
       case AddDevice(device) => EventSuccess(DeviceAdded(device))
 
-      case SmartHomeService.UpdateDevice(deviceId, newValue) =>
+      case UpdateDevice(deviceId, newValue) =>
         state.devices.find(_.id == deviceId) match {
           case Some(device) => EventSuccess(DeviceUpdated(device.updated(newValue)))
           case None         => CommandFailed(s"Device $deviceId not found.")
         }
 
-      case SmartHomeService.GetSmartHome =>
+      case GetSmartHome =>
         CommandResponse(s"Result from ${state.homeId}: ${state.devices}")
     }
   }
@@ -61,7 +61,7 @@ class SmartHomeServiceImpl(repository: SmartHomeEventRepository[IO]) extends Sma
 
   private def eventToStateChange(event: Event): SmartHome => SmartHome = { case state @ SmartHome(_, devices) =>
     event match {
-      case DeviceAdded(device)    => state.copy(devices = state.devices :+ device)
+      case DeviceAdded(device)   => state.copy(devices = state.devices :+ device)
       case DeviceUpdated(device) => state.copy(devices = updateDevice(devices, _ => device))
     }
   }
