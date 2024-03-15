@@ -11,6 +11,11 @@ import java.util.UUID
 
 class SmartHomeServiceImpl(repository: SmartHomeEventRepository[IO]) extends SmartHomeService[IO] {
 
+  private sealed trait CommandResult
+  private case class EventSuccess(event: Event) extends CommandResult
+  private case class CommandResponse(payload: String) extends CommandResult
+  private case class CommandFailed(reason: String) extends CommandResult
+
   override def processCommand(
     homeId: UUID,
     command: Command
@@ -24,8 +29,9 @@ class SmartHomeServiceImpl(repository: SmartHomeEventRepository[IO]) extends Sma
       currentState = buildState(events).runS(initialState).value
       // Apply command to current state and return event
       result <- handleCommand(command, currentState).flatMap {
-        case (result, Some(event)) => repository.persistEvent(homeId, event).as(result)
-        case (result, None)        => IO.pure(result)
+        case EventSuccess(event)      => repository.persistEvent(homeId, event).as(Success)
+        case CommandResponse(payload) => IO.pure(ResponseResult(payload))
+        case CommandFailed(reason)    => IO.pure(Failure(reason))
       }
     } yield result
 
@@ -33,19 +39,18 @@ class SmartHomeServiceImpl(repository: SmartHomeEventRepository[IO]) extends Sma
   private def handleCommand(
     command: Command,
     state: SmartHome
-  ): IO[(SmartHomeResult, Option[Event])] = IO {
+  ): IO[CommandResult] = IO {
     command match {
-      case AddDevice(device) =>
-        (Success, Some(DeviceAdded(device)))
+      case AddDevice(device) => EventSuccess(DeviceAdded(device))
 
       case SmartHomeService.UpdateDevice(deviceId, newValue) =>
         state.devices.find(_.id == deviceId) match {
-          case Some(device) => (Success, Some(DeviceUpdated(device.updated(newValue))))
-          case None         => (Failure(s"Device $deviceId not found."), None)
+          case Some(device) => EventSuccess(DeviceUpdated(device.updated(newValue)))
+          case None         => CommandFailed(s"Device $deviceId not found.")
         }
 
       case SmartHomeService.GetSmartHome =>
-        (Result(s"Result from ${state.homeId}: ${state.devices}"), None)
+        CommandResponse(s"Result from ${state.homeId}: ${state.devices}")
     }
   }
 
@@ -57,7 +62,7 @@ class SmartHomeServiceImpl(repository: SmartHomeEventRepository[IO]) extends Sma
   private def eventToStateChange(event: Event): SmartHome => SmartHome = { case state @ SmartHome(_, devices) =>
     event match {
       case DeviceAdded(device)    => state.copy(devices = state.devices :+ device)
-      case DeviceUpdated(updated) => state.copy(devices = updateDevice(devices, _ => updated))
+      case DeviceUpdated(device) => state.copy(devices = updateDevice(devices, _ => device))
     }
   }
 

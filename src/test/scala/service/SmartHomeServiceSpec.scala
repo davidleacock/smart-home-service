@@ -5,7 +5,7 @@ import domain.Thermostat
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AsyncWordSpec
 import repo.impl.InMemorySmartHomeEventRepo
-import service.SmartHomeService.{AddDevice, DeviceUpdated, Failure, GetSmartHome, Result, Success, UpdateDevice}
+import service.SmartHomeService._
 
 import java.util.UUID
 
@@ -101,7 +101,7 @@ class SmartHomeServiceSpec extends AsyncWordSpec with AsyncIOSpec with Matchers 
         _ <- service.processCommand(homeId, AddDevice(device))
         _ <- service.processCommand(homeId, UpdateDevice(deviceId, 10))
         result <- service.processCommand(homeId, GetSmartHome)
-      } yield result shouldBe Result(s"Result from $homeId: List(Thermostat($deviceId,Thermostat,10))")
+      } yield result shouldBe ResponseResult(s"Result from $homeId: List(Thermostat($deviceId,Thermostat,10))")
 
       test.assertNoException
     }
