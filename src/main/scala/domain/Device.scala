@@ -13,7 +13,7 @@ trait Device {
 
 trait DeviceType
 case object Thermostat extends DeviceType
-//case object MotionDetector extends DeviceType
+case object MotionDetector extends DeviceType
 
 // TODO how does Device validation work?
 case class Thermostat(
@@ -22,12 +22,25 @@ case class Thermostat(
   value: Int)
     extends Device {
 
-  override def updated(newValue: Int): Device = {
-    // arbitrary error value
+  override def updated(newValue: Int): Device =
+    // ! arbitrary error value - replace
     if (!newValue.equals(999)) {
       this.copy(value = newValue)
     } else this
-  }
+
+  override def currValue: Int = this.value
+}
+
+case class MotionDetector(
+  id: UUID,
+  deviceType: DeviceType = MotionDetector,
+  value: Int)
+    extends Device {
+  override def updated(newValue: Int): Device =
+    // ! arbitrary error value - replace
+    if (!newValue.equals(888)) {
+      this.copy(value = newValue)
+    } else this
 
   override def currValue: Int = this.value
 }
