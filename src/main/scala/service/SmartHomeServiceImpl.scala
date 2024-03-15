@@ -45,8 +45,12 @@ class SmartHomeServiceImpl(repository: SmartHomeEventRepository[IO]) extends Sma
 
       case UpdateDevice(deviceId, newValue) =>
         state.devices.find(_.id == deviceId) match {
-          case Some(device) => EventSuccess(DeviceUpdated(device.updated(newValue)))
-          case None         => CommandFailed(s"Device $deviceId not found.")
+          case Some(device) =>
+            device.applyUpdate(newValue) match {
+              case Right(updatedDevice) => EventSuccess(DeviceUpdated(updatedDevice))
+              case Left(error)          => CommandFailed(error.reason)
+            }
+          case None => CommandFailed(s"Device $deviceId not found.")
         }
 
       case GetSmartHome =>
@@ -56,19 +60,16 @@ class SmartHomeServiceImpl(repository: SmartHomeEventRepository[IO]) extends Sma
 
   private def buildState(events: List[Event]): State[SmartHome, Unit] =
     events.traverse_ { event =>
-      State.modify(eventToStateChange(event))
+      State.modify(applyEventToState(event))
     }
 
-  private def eventToStateChange(event: Event): SmartHome => SmartHome = { case state @ SmartHome(_, devices) =>
+  private def applyEventToState(event: Event): SmartHome => SmartHome = { case state @ SmartHome(_, devices) =>
     event match {
       case DeviceAdded(device)   => state.copy(devices = state.devices :+ device)
-      case DeviceUpdated(device) => state.copy(devices = updateDevice(devices, _ => device))
+      case DeviceUpdated(device) => state.copy(devices = updateDevice(devices, device))
     }
   }
 
-  private def updateDevice(devices: List[Device], updateFn: Device => Device): List[Device] =
-    devices.map {
-      case device if device.id == updateFn(device).id => updateFn(device)
-      case device                                     => device
-    }
+  private def updateDevice(devices: List[Device], updatedDevice: Device): List[Device] =
+    devices.map(device => if (device.id == updatedDevice.id) updatedDevice else device)
 }
