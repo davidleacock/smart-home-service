@@ -122,7 +122,9 @@ class SmartHomeServiceSpec extends AsyncWordSpec with AsyncIOSpec with Matchers 
         _ <- service.processCommand(homeId, UpdateDevice(thermostatId, IntDVT(10)))
         _ <- service.processCommand(homeId, UpdateDevice(motionId, StringDVT("motion_detected")))
         result <- service.processCommand(homeId, GetSmartHome)
-      } yield result shouldBe ResponseResult(s"Result from $homeId: List(Thermostat($thermostatId,10), MotionDetector($motionId,motion_detected))")
+      } yield result shouldBe ResponseResult(
+        s"Result from $homeId: List(Thermostat($thermostatId,10), MotionDetector($motionId,motion_detected))"
+      )
 
       test.assertNoException
     }

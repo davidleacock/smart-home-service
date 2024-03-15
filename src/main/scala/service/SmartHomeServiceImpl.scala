@@ -29,7 +29,7 @@ class SmartHomeServiceImpl(repository: SmartHomeEventRepository[IO]) extends Sma
       currentState = buildState(events).runS(initialState).value
       // Apply command to current state, persist new event if needed and reply
       result <- handleCommand(command, currentState).flatMap {
-        case EventSuccess(event)      => repository.persistEvent(homeId, event).as(Success)
+        case EventSuccess(event)      => repository.persistEvent(homeId, event).as(Success) // TODO handle errors from the repo
         case CommandResponse(payload) => IO.pure(ResponseResult(payload))
         case CommandFailed(reason)    => IO.pure(Failure(reason))
       }
