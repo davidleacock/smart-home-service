@@ -17,7 +17,7 @@ object DeviceValueTypeImplicits {
   }
 }
 
-trait Device {
+sealed trait Device {
   val id: UUID
   val currValue: DeviceValueType
   def applyUpdate(newValue: DeviceValueType): Either[DeviceError, Device]
