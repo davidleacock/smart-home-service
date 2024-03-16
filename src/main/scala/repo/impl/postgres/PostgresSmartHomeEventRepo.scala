@@ -1,0 +1,40 @@
+package repo.impl.postgres
+
+import cats.effect.IO
+import doobie.Transactor
+import doobie.implicits._
+import io.circe.syntax.EncoderOps
+import repo.SmartHomeEventRepository
+import service.SmartHomeService.Event
+
+import java.util.UUID
+
+class PostgresSmartHomeEventRepo(val xa: Transactor[IO]) extends SmartHomeEventRepository[IO] {
+
+  import EncoderDecoder._
+
+  override def persistEvent(homeId: UUID, event: Event): IO[Unit] = {
+    val eventData = event.asJson.noSpaces
+    val eventType = event.getClass.getSimpleName
+
+    sql"""
+         INSERT INTO events (home_id, event_type, event_data)
+         VALUES ($homeId, $eventType, $eventData)
+         """
+      .update
+      .run
+      .transact(xa)
+      .void
+  }
+
+  // TODO can we use streaming for this?
+  override def retrieveEvents(homeId: UUID): IO[List[Event]] =
+    sql"""
+         SELECT event_data FROM events WHERE home_id = $homeId
+       """
+      .query[Event]
+      .to[List]
+      .transact(xa)
+}
+
+
