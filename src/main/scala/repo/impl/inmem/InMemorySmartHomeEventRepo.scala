@@ -1,4 +1,4 @@
-package repo.impl
+package repo.impl.inmem
 
 import cats.effect.{IO, Ref}
 import repo.SmartHomeEventRepository

@@ -5,7 +5,7 @@ import domain.DeviceValueTypeImplicits.DeviceValueTypeOps
 import domain.{IntDVT, MotionDetector, StringDVT, Thermostat}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AsyncWordSpec
-import repo.impl.InMemorySmartHomeEventRepo
+import repo.impl.inmem.InMemorySmartHomeEventRepo
 import service.SmartHomeService._
 
 import java.util.UUID
