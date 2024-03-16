@@ -15,5 +15,12 @@ libraryDependencies ++= Seq(
   "org.scalatest" %% "scalatest" % "3.2.17" % "test",
   "org.typelevel" %% "cats-effect" % "3.5.2",
   "org.scalatest" %% "scalatest" % "3.2.17",
-  "org.typelevel" %% "cats-effect-testing-scalatest" % "1.5.0"
+  "org.typelevel" %% "cats-effect-testing-scalatest" % "1.5.0",
+  "org.tpolecat" %% "doobie-core" % "1.0.0-RC1",
+  "org.tpolecat" %% "doobie-postgres" % "1.0.0-RC1",
+  "org.tpolecat" %% "doobie-hikari" % "1.0.0-RC1",
+  "io.circe" %% "circe-core" % "0.14.1",
+  "io.circe" %% "circe-generic" % "0.14.1",
+  "io.circe" %% "circe-parser" % "0.14.1",
+  "io.circe" %% "circe-generic-extras" % "0.14.1"
 )
