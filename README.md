@@ -7,7 +7,8 @@ This service orchestrates smart home devices by processing commands, updating th
 
 ### SmartHomeService API
 `AddDevice(homeId: UUID, device: Device)` </p>
-`UpdateDevice(homeId: UUID, deviceId: UUID, newValue: DeviceValueType`
+`UpdateDevice(homeId: UUID, deviceId: UUID, newValue: DeviceValueType)` </p>
+`GetSmartHome(homeId: UUID)` </p>
 
 
 ## In Progress: Event Sourcing
