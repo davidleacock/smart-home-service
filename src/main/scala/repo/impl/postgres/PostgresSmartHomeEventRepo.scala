@@ -19,7 +19,7 @@ class PostgresSmartHomeEventRepo(val xa: Transactor[IO]) extends SmartHomeEventR
 
     sql"""
          INSERT INTO events (home_id, event_type, event_data)
-         VALUES ($homeId, $eventType, $eventData)
+         VALUES (${homeId.toString}, $eventType, $eventData)
          """
       .update
       .run
@@ -30,7 +30,7 @@ class PostgresSmartHomeEventRepo(val xa: Transactor[IO]) extends SmartHomeEventR
   // TODO can we use streaming for this?
   override def retrieveEvents(homeId: UUID): IO[List[Event]] =
     sql"""
-         SELECT event_data FROM events WHERE home_id = $homeId
+         SELECT event_data FROM events WHERE home_id = ${homeId.toString}
        """
       .query[Event]
       .to[List]
