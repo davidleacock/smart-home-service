@@ -16,10 +16,11 @@ class PostgresSmartHomeEventRepo(val xa: Transactor[IO]) extends SmartHomeEventR
   override def persistEvent(homeId: UUID, event: Event): IO[Unit] = {
     val eventData = event.asJson.noSpaces
     val eventType = event.getClass.getSimpleName
+    val id = homeId.toString
 
     sql"""
          INSERT INTO events (home_id, event_type, event_data)
-         VALUES (${homeId.toString}, $eventType, $eventData)
+         VALUES ($id::TEXT, $eventType::TEXT, $eventData::TEXT)
          """
       .update
       .run
@@ -28,13 +29,14 @@ class PostgresSmartHomeEventRepo(val xa: Transactor[IO]) extends SmartHomeEventR
   }
 
   // TODO can we use streaming for this?
-  override def retrieveEvents(homeId: UUID): IO[List[Event]] =
+  override def retrieveEvents(homeId: UUID): IO[List[Event]] = {
     sql"""
-         SELECT event_data FROM events WHERE home_id = ${homeId.toString}
+         SELECT event_data FROM events WHERE home_id = ${homeId.toString}::TEXT
        """
       .query[Event]
       .to[List]
       .transact(xa)
+  }
 }
 
 

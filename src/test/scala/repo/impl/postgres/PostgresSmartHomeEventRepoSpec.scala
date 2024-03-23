@@ -17,11 +17,12 @@ class PostgresSmartHomeEventRepoSpec extends AnyFlatSpec with Matchers with Test
 
   override val containerDef: PostgreSQLContainer.Def = PostgreSQLContainer.Def()
 
-  it should "persist and retrieve events correctly" in withContainers { case pg: PostgreSQLContainer =>
-    // TODO fix flyway migration
+  it should "persist and retrieve events correctly" in withContainers { pg: PostgreSQLContainer =>
+
     Flyway
       .configure()
       .dataSource(pg.jdbcUrl, pg.username, pg.password)
+      .locations("classpath:db/migrations")
       .load()
       .migrate()
 
@@ -37,7 +38,6 @@ class PostgresSmartHomeEventRepoSpec extends AnyFlatSpec with Matchers with Test
     val homeId = UUID.randomUUID()
     val deviceId = UUID.randomUUID()
 
-    // fix - you shouldnt be able to use an int at this level
     val device = Thermostat(deviceId, 5)
     val event = DeviceAdded(device)
 
@@ -46,7 +46,5 @@ class PostgresSmartHomeEventRepoSpec extends AnyFlatSpec with Matchers with Test
     val retrieved = repo.retrieveEvents(homeId).unsafeRunSync()
 
     retrieved should contain(event)
-
   }
-
 }
