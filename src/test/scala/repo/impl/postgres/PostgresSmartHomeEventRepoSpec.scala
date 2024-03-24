@@ -9,7 +9,7 @@ import doobie.Transactor
 import org.flywaydb.core.Flyway
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import service.SmartHomeService.DeviceAdded
+import service.SmartHomeService.{DeviceAdded, DeviceUpdated}
 
 import java.util.UUID
 
@@ -43,8 +43,20 @@ class PostgresSmartHomeEventRepoSpec extends AnyFlatSpec with Matchers with Test
 
     repo.persistEvent(homeId, event).unsafeRunSync()
 
-    val retrieved = repo.retrieveEvents(homeId).unsafeRunSync()
+    val updateDeviceEvent = DeviceUpdated(Thermostat(deviceId, 10))
+    repo.persistEvent(homeId, updateDeviceEvent).unsafeRunSync()
 
-    retrieved should contain(event)
+    val result = repo.retrieveEvents(homeId).unsafeRunSync()
+
+    result should be(List(event, updateDeviceEvent))
+
+    val home2Id = UUID.randomUUID()
+    val deviceId2 = UUID.randomUUID()
+    val thermo2 = Thermostat(deviceId2, 25)
+    val event2 = DeviceAdded(thermo2)
+
+    repo.persistEvent(home2Id, event2).unsafeRunSync()
+
+    repo.retrieveEvents(home2Id).unsafeRunSync() should contain(event2)
   }
 }
