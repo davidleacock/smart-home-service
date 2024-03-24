@@ -24,7 +24,7 @@ class SmartHomeServiceImpl(repository: SmartHomeEventRepository[IO]) extends Sma
       // Retrieve list of events from repo
       events <- repository.retrieveEvents(homeId)
       // Create initial SmartHome State
-      initialState = SmartHome(homeId, List.empty)
+      initialState = SmartHome(homeId, List.empty, None)
       // Replay events to build current State
       currentState = buildState(events).runS(initialState).value
       // Apply command to current state, persist new event if needed and reply
@@ -54,7 +54,7 @@ class SmartHomeServiceImpl(repository: SmartHomeEventRepository[IO]) extends Sma
         }
 
       case GetSmartHome =>
-        CommandResponse(s"Result from ${state.homeId}: ${state.devices}")
+        CommandResponse(s"Result from ${state.homeId}: ${state.devices} currentTemp: ${state.currentTemperature}")
     }
   }
 
@@ -63,10 +63,20 @@ class SmartHomeServiceImpl(repository: SmartHomeEventRepository[IO]) extends Sma
       State.modify(applyEventToState(event))
     }
 
-  private def applyEventToState(event: Event): SmartHome => SmartHome = { case state @ SmartHome(_, devices) =>
+  private def applyEventToState(event: Event): SmartHome => SmartHome = { case state @ SmartHome(_, devices, _) =>
     event match {
-      case DeviceAdded(device)   => state.copy(devices = state.devices :+ device)
-      case DeviceUpdated(device) => state.copy(devices = updateDevice(devices, device))
+      case DeviceAdded(device)   =>
+        device match {
+          // ! clean up
+          // ! add motion detected state
+          case Thermostat(_, temp) => state.copy(devices = state.devices :+ device, currentTemperature = Some(temp))
+          case MotionDetector(_, _) => state.copy(devices = state.devices :+ device)
+        }
+      case DeviceUpdated(device) =>
+        device match {
+          case Thermostat(_, temp) => state.copy(devices = updateDevice(devices, device), currentTemperature = Some(temp))
+          case MotionDetector(_, _) => state.copy(devices = updateDevice(devices, device))
+        }
     }
   }
 

@@ -102,7 +102,7 @@ class SmartHomeServiceSpec extends AsyncWordSpec with AsyncIOSpec with Matchers 
         _ <- service.processCommand(homeId, AddDevice(device))
         _ <- service.processCommand(homeId, UpdateDevice(deviceId, IntDVT(10)))
         result <- service.processCommand(homeId, GetSmartHome)
-      } yield result shouldBe ResponseResult(s"Result from $homeId: List(Thermostat($deviceId,10))")
+      } yield result shouldBe ResponseResult(s"Result from $homeId: List(Thermostat($deviceId,10)) currentTemp: Some(10)")
 
       test.assertNoException
     }
@@ -123,7 +123,7 @@ class SmartHomeServiceSpec extends AsyncWordSpec with AsyncIOSpec with Matchers 
         _ <- service.processCommand(homeId, UpdateDevice(motionId, StringDVT("motion_detected")))
         result <- service.processCommand(homeId, GetSmartHome)
       } yield result shouldBe ResponseResult(
-        s"Result from $homeId: List(Thermostat($thermostatId,10), MotionDetector($motionId,motion_detected))"
+        s"Result from $homeId: List(Thermostat($thermostatId,10), MotionDetector($motionId,motion_detected)) currentTemp: Some(10)"
       )
 
       test.assertNoException
@@ -143,7 +143,7 @@ class SmartHomeServiceSpec extends AsyncWordSpec with AsyncIOSpec with Matchers 
         result <- service.processCommand(homeId, GetSmartHome)
       } yield {
         processResult shouldBe Failure("Invalid value for Thermostat")
-        result shouldBe ResponseResult(s"Result from $homeId: List(Thermostat($thermostatId,10))")
+        result shouldBe ResponseResult(s"Result from $homeId: List(Thermostat($thermostatId,10)) currentTemp: Some(10)")
       }
 
       test.assertNoException

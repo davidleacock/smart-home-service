@@ -2,4 +2,4 @@ package domain
 
 import java.util.UUID
 
-case class SmartHome(homeId: UUID, devices: List[Device])
+case class SmartHome(homeId: UUID, devices: List[Device], currentTemperature: Option[Int])
