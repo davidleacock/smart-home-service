@@ -28,7 +28,7 @@ class PostgresSmartHomeEventRepo(val xa: Transactor[IO]) extends SmartHomeEventR
       .void
   }
 
-  // TODO can we use streaming for this?
+  // TODO replace with streaming
   override def retrieveEvents(homeId: UUID): IO[List[Event]] = {
     sql"""
          SELECT event_data FROM events WHERE home_id = ${homeId.toString}
