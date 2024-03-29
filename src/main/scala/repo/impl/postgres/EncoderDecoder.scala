@@ -6,7 +6,7 @@ import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
 import io.circe.parser.decode
 import io.circe.syntax.EncoderOps
 import io.circe.{Decoder, DecodingFailure, Encoder, Json}
-import service.SmartHomeService.{DeviceAdded, DeviceUpdated, Event}
+import service.SmartHomeService.{DeviceAdded, DeviceUpdated, Event, TemperatureSettingsSet}
 
 object EncoderDecoder {
 
@@ -15,7 +15,7 @@ object EncoderDecoder {
       .timap[Event] { pgObject =>
         decode[Event](pgObject) match {
           case Right(event) => event
-          case Left(error) =>
+          case Left(error)  =>
             // TODO make this more robust?
             println(s"decoding error $error")
             throw error
@@ -25,9 +25,9 @@ object EncoderDecoder {
       }
 
   /* Encoders */
-
   implicit val thermostatEncoder: Encoder[Thermostat] = deriveEncoder
   implicit val motionDetectorEncoder: Encoder[MotionDetector] = deriveEncoder
+  implicit val temperatureSettingsEncoder: Encoder[TemperatureSettings] = deriveEncoder
 
   implicit val encodeDeviceValueType: Encoder[DeviceValueType] = Encoder.instance {
     case IntDVT(value)    => Json.obj("type" -> Json.fromString("IntDVT"), "value" -> Json.fromInt(value))
@@ -50,12 +50,14 @@ object EncoderDecoder {
   implicit val encodeEvent: Encoder[Event] = Encoder.instance {
     case DeviceAdded(device)   => Json.obj("eventType" -> Json.fromString("DeviceAdded"), "device" -> device.asJson)
     case DeviceUpdated(device) => Json.obj("eventType" -> Json.fromString("DeviceUpdated"), "device" -> device.asJson)
+    case TemperatureSettingsSet(settings) =>
+      Json.obj("eventType" -> Json.fromString("TemperatureSettingsSet"), "settings" -> settings.asJson)
   }
 
   /* Decoders   */
-
   implicit val thermostatDecoder: Decoder[Thermostat] = deriveDecoder
   implicit val motionDetectorDecoder: Decoder[MotionDetector] = deriveDecoder
+  implicit val temperatureSettingsDecoder: Decoder[TemperatureSettings] = deriveDecoder
 
   implicit val decodeDeviceValueType: Decoder[DeviceValueType] = Decoder.instance { cursor =>
     cursor.get[String]("type").flatMap {
@@ -74,8 +76,9 @@ object EncoderDecoder {
 
   implicit val decodeEvent: Decoder[Event] = Decoder.instance { cursor =>
     cursor.get[String]("eventType").flatMap {
-      case "DeviceAdded"   => cursor.get[Device]("device").map(DeviceAdded)
-      case "DeviceUpdated" => cursor.get[Device]("device").map(DeviceUpdated)
+      case "DeviceAdded"            => cursor.get[Device]("device").map(DeviceAdded)
+      case "DeviceUpdated"          => cursor.get[Device]("device").map(DeviceUpdated)
+      case "TemperatureSettingsSet" => cursor.get[TemperatureSettings]("settings").map(TemperatureSettingsSet)
     }
   }
 }
