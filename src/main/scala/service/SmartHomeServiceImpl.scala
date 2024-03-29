@@ -24,12 +24,12 @@ class SmartHomeServiceImpl(repository: SmartHomeEventRepository[IO]) extends Sma
       // Retrieve list of events from repo
       events <- repository.retrieveEvents(homeId)
       // Create initial SmartHome State
-      initialState = SmartHome(homeId, List.empty, None)
+      initialState = SmartHome(homeId, List.empty, None, None)
       // Replay events to build current State
       currentState = buildState(events).runS(initialState).value
       // Apply command to current state, persist new event if needed and reply
       result <- handleCommand(command, currentState).flatMap {
-        case EventSuccess(event)      => repository.persistEvent(homeId, event).as(Success) // TODO handle errors from the repo
+        case EventSuccess(event) => repository.persistEvent(homeId, event).as(Success) // TODO handle errors from the repo
         case CommandResponse(payload) => IO.pure(ResponseResult(payload))
         case CommandFailed(reason)    => IO.pure(Failure(reason))
       }
@@ -55,6 +55,10 @@ class SmartHomeServiceImpl(repository: SmartHomeEventRepository[IO]) extends Sma
 
       case GetSmartHome =>
         CommandResponse(s"Result from ${state.homeId}: ${state.devices} currentTemp: ${state.currentTemperature}")
+
+      case SetTemperatureSettings(min, max) =>
+        EventSuccess(TemperatureSettingsSet(TemperatureSettings(min, max)))
+
     }
   }
 
@@ -63,20 +67,21 @@ class SmartHomeServiceImpl(repository: SmartHomeEventRepository[IO]) extends Sma
       State.modify(applyEventToState(event))
     }
 
-  private def applyEventToState(event: Event): SmartHome => SmartHome = { case state @ SmartHome(_, devices, _) =>
+  private def applyEventToState(event: Event): SmartHome => SmartHome = { case state @ SmartHome(_, devices, _, _) =>
     event match {
-      case DeviceAdded(device)   =>
+      case DeviceAdded(device) =>
         device match {
-          // ! clean up
-          // ! add motion detected state
-          case Thermostat(_, temp) => state.copy(devices = state.devices :+ device, currentTemperature = Some(temp))
+          case Thermostat(_, temp)  => state.copy(devices = state.devices :+ device, currentTemperature = Some(temp))
           case MotionDetector(_, _) => state.copy(devices = state.devices :+ device)
         }
       case DeviceUpdated(device) =>
         device match {
-          case Thermostat(_, temp) => state.copy(devices = updateDevice(devices, device), currentTemperature = Some(temp))
+          case Thermostat(_, temp) =>
+            state.copy(devices = updateDevice(devices, device), currentTemperature = Some(temp))
           case MotionDetector(_, _) => state.copy(devices = updateDevice(devices, device))
         }
+
+      case TemperatureSettingsSet(temperatureSettings) => state.copy(temperatureSettings = Some(temperatureSettings))
     }
   }
 

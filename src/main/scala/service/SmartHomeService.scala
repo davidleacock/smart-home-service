@@ -1,6 +1,6 @@
 package service
 
-import domain.{Device, DeviceValueType}
+import domain.{Device, DeviceValueType, TemperatureSettings}
 import service.SmartHomeService.{Command, SmartHomeResult}
 
 import java.util.UUID
@@ -11,13 +11,18 @@ trait SmartHomeService[F[_]] {
 
 object SmartHomeService {
   sealed trait Command
+  // SmartHome commands
+  case object GetSmartHome extends Command
+  case class SetTemperatureSettings(minimumTemperature: Int, maximumTemperature: Int) extends Command
+
+  // Device commands
   case class AddDevice(device: Device) extends Command
   case class UpdateDevice(deviceId: UUID, newValue: DeviceValueType) extends Command
-  case object GetSmartHome extends Command
 
   sealed trait Event
   case class DeviceAdded(device: Device) extends Event
   case class DeviceUpdated(device: Device) extends Event
+  case class TemperatureSettingsSet(temperatureSettings: TemperatureSettings) extends Event
 
   sealed trait SmartHomeResult
   case object Success extends SmartHomeResult
