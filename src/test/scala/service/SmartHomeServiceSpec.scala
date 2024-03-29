@@ -55,6 +55,30 @@ class SmartHomeServiceSpec extends AsyncWordSpec with AsyncIOSpec with Matchers 
       test.assertNoException
     }
 
+    "process an SetTemperatureSettings command by setting min and max value for SmartHome" in {
+      val test = for {
+        repo <- InMemorySmartHomeEventRepo.create
+        service = new SmartHomeServiceImpl(repo)
+        homeId = UUID.randomUUID()
+        min = 0
+        max = 100
+
+        result <- service.processCommand(homeId, SetTemperatureSettings(min, max))
+        persistedEvents <- repo.retrieveEvents(homeId)
+      } yield {
+        result shouldBe Success
+        persistedEvents should have size 1
+        persistedEvents.head match {
+          case TemperatureSettingsSet(settings) =>
+            settings.minTemp shouldBe min
+            settings.maxTemp shouldBe max
+          case _ => fail("most recent event isn't TemperatureSettingsSet")
+        }
+      }
+
+      test.assertNoException
+    }
+
     "process an UpdateDevice command for a device that hasn't been updated by returning a Failure" in {
       val test = for {
         repo <- InMemorySmartHomeEventRepo.create

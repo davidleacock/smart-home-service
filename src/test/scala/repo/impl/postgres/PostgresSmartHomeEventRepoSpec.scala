@@ -2,61 +2,74 @@ package repo.impl.postgres
 
 import cats.effect.IO
 import cats.effect.unsafe.implicits.global
-import com.dimafeng.testcontainers.PostgreSQLContainer
-import com.dimafeng.testcontainers.scalatest.TestContainerForAll
-import domain.Thermostat
+import com.dimafeng.testcontainers.{ForAllTestContainer, PostgreSQLContainer}
+import domain.{TemperatureSettings, Thermostat}
 import doobie.Transactor
+import doobie.util.transactor.Transactor.Aux
 import org.flywaydb.core.Flyway
-import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.BeforeAndAfterAll
 import org.scalatest.matchers.should.Matchers
-import service.SmartHomeService.{DeviceAdded, DeviceUpdated}
+import org.scalatest.wordspec.AnyWordSpec
+import service.SmartHomeService.{DeviceAdded, DeviceUpdated, TemperatureSettingsSet}
 
 import java.util.UUID
 
-class PostgresSmartHomeEventRepoSpec extends AnyFlatSpec with Matchers with TestContainerForAll {
+class PostgresSmartHomeEventRepoSpec extends AnyWordSpec with Matchers with ForAllTestContainer with BeforeAndAfterAll {
 
-  override val containerDef: PostgreSQLContainer.Def = PostgreSQLContainer.Def()
+  override val container: PostgreSQLContainer = PostgreSQLContainer()
 
-  it should "persist and retrieve events correctly" in withContainers { pg: PostgreSQLContainer =>
+  lazy val transactor: Aux[IO, Unit] = Transactor.fromDriverManager[IO](
+    "org.postgresql.Driver",
+    container.jdbcUrl,
+    container.username,
+    container.password
+  )
 
+  override def afterStart(): Unit = {
+    super.afterStart()
     Flyway
       .configure()
-      .dataSource(pg.jdbcUrl, pg.username, pg.password)
+      .dataSource(container.jdbcUrl, container.username, container.password)
       .locations("classpath:db/migrations")
       .load()
       .migrate()
+  }
 
-    val transactor = Transactor.fromDriverManager[IO](
-      "org.postgresql.Driver",
-      pg.jdbcUrl,
-      pg.username,
-      pg.password
-    )
+  "PostgresSmartHomeEventRepo" should {
 
-    val repo = new PostgresSmartHomeEventRepo(transactor)
+    "persist and retrieve device events correctly" in {
+      val repo = new PostgresSmartHomeEventRepo(transactor)
 
-    val homeId = UUID.randomUUID()
-    val deviceId = UUID.randomUUID()
+      val homeId = UUID.randomUUID()
+      val deviceId = UUID.randomUUID()
 
-    val device = Thermostat(deviceId, 5)
-    val event = DeviceAdded(device)
+      val device = Thermostat(deviceId, 5)
+      val event = DeviceAdded(device)
 
-    repo.persistEvent(homeId, event).unsafeRunSync()
+      repo.persistEvent(homeId, event).unsafeRunSync()
 
-    val updateDeviceEvent = DeviceUpdated(Thermostat(deviceId, 10))
-    repo.persistEvent(homeId, updateDeviceEvent).unsafeRunSync()
+      val updateDeviceEvent = DeviceUpdated(Thermostat(deviceId, 10))
+      repo.persistEvent(homeId, updateDeviceEvent).unsafeRunSync()
 
-    val result = repo.retrieveEvents(homeId).unsafeRunSync()
+      val result = repo.retrieveEvents(homeId).unsafeRunSync()
 
-    result should be(List(event, updateDeviceEvent))
+      result should be(List(event, updateDeviceEvent))
+    }
 
-    val home2Id = UUID.randomUUID()
-    val deviceId2 = UUID.randomUUID()
-    val thermo2 = Thermostat(deviceId2, 25)
-    val event2 = DeviceAdded(thermo2)
+    "persist and retrieve temperature setting events" in {
+      val repo = new PostgresSmartHomeEventRepo(transactor)
 
-    repo.persistEvent(home2Id, event2).unsafeRunSync()
+      val homeId = UUID.randomUUID()
+      val min = 0
+      val max = 100
 
-    repo.retrieveEvents(home2Id).unsafeRunSync() should contain(event2)
+      val event = TemperatureSettingsSet(TemperatureSettings(min, max))
+
+      repo.persistEvent(homeId, event).unsafeRunSync()
+
+      val result = repo.retrieveEvents(homeId).unsafeRunSync()
+
+      result should be(List(event))
+    }
   }
 }
