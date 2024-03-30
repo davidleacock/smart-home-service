@@ -1,4 +1,4 @@
-package repo.impl.postgres
+package utils
 
 import domain._
 import doobie.util.meta.Meta
@@ -28,6 +28,8 @@ object EncoderDecoder {
   implicit val thermostatEncoder: Encoder[Thermostat] = deriveEncoder
   implicit val motionDetectorEncoder: Encoder[MotionDetector] = deriveEncoder
   implicit val temperatureSettingsEncoder: Encoder[TemperatureSettings] = deriveEncoder
+  implicit val intDVTEncoder: Encoder[IntDVT] = deriveEncoder
+
 
   implicit val encodeDeviceValueType: Encoder[DeviceValueType] = Encoder.instance {
     case IntDVT(value)    => Json.obj("type" -> Json.fromString("IntDVT"), "value" -> Json.fromInt(value))
