@@ -172,5 +172,24 @@ class SmartHomeServiceSpec extends AsyncWordSpec with AsyncIOSpec with Matchers 
 
       test.assertNoException
     }
+
+    "process an UpdateDevice command for a motion detector" in {
+      val test = for {
+        repo <- InMemorySmartHomeEventRepo.create
+        service = new SmartHomeServiceImpl(repo)
+        homeId = UUID.randomUUID()
+
+        motionId = UUID.randomUUID()
+        motion = MotionDetector(motionId, "motion_detected")
+
+        _ <- service.processCommand(homeId, AddDevice(motion))
+        _ <- service.processCommand(homeId, UpdateDevice(motionId, StringDVT("motion_not_detected")))
+        result <- service.processCommand(homeId, GetSmartHome)
+      } yield result shouldBe ResponseResult(
+        s"Result from $homeId: List(MotionDetector($motionId,motion_not_detected)) currentTemp: None motion: MotionNotDetected"
+      )
+
+      test.assertNoException
+    }
   }
 }

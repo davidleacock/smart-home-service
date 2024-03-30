@@ -3,7 +3,7 @@ package repo.impl.postgres
 import cats.effect.IO
 import cats.effect.unsafe.implicits.global
 import com.dimafeng.testcontainers.{ForAllTestContainer, PostgreSQLContainer}
-import domain.{TemperatureSettings, Thermostat}
+import domain.{MotionDetector, TemperatureSettings, Thermostat}
 import doobie.Transactor
 import doobie.util.transactor.Transactor.Aux
 import org.flywaydb.core.Flyway
@@ -37,7 +37,7 @@ class PostgresSmartHomeEventRepoSpec extends AnyWordSpec with Matchers with ForA
 
   "PostgresSmartHomeEventRepo" should {
 
-    "persist and retrieve device events correctly" in {
+    "persist and retrieve thermostat device events correctly" in {
       val repo = new PostgresSmartHomeEventRepo(transactor)
 
       val homeId = UUID.randomUUID()
@@ -70,6 +70,27 @@ class PostgresSmartHomeEventRepoSpec extends AnyWordSpec with Matchers with ForA
       val result = repo.retrieveEvents(homeId).unsafeRunSync()
 
       result should be(List(event))
+    }
+
+    "persist and retrieve motion detector events correctly" in {
+      val repo = new PostgresSmartHomeEventRepo(transactor)
+
+      val homeId = UUID.randomUUID()
+      val deviceId = UUID.randomUUID()
+
+      val device = MotionDetector(deviceId, "motion_not_detected")
+      val event1 = DeviceAdded(device)
+
+      repo.persistEvent(homeId, event1).unsafeRunSync()
+
+      val updatedDevice = MotionDetector(deviceId, "motion_detected")
+      val event2 = DeviceUpdated(updatedDevice)
+
+      repo.persistEvent(homeId, event2).unsafeRunSync()
+
+      val result = repo.retrieveEvents(homeId).unsafeRunSync()
+
+      result should be(List(event1, event2))
     }
   }
 }
