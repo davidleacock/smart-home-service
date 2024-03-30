@@ -26,5 +26,6 @@ libraryDependencies ++= Seq(
   "org.testcontainers" % "postgresql" % "1.15.3",
   "org.flywaydb" % "flyway-core" % "7.11.1",
   "com.dimafeng" %% "testcontainers-scala-scalatest" % "0.39.6" % "test",
-  "com.dimafeng" %% "testcontainers-scala-postgresql" % "0.39.6" % "test"
+  "com.dimafeng" %% "testcontainers-scala-postgresql" % "0.39.6" % "test",
+  "com.github.fd4s" %% "fs2-kafka" % "3.2.0"
 )
