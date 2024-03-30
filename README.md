@@ -23,9 +23,11 @@ Will use protobuf to define some external event that the service will consume fr
 * integration tests with postgres repo ✅
 * Add FSM to SmartHome ✅
 * Create rule engine for SmartHome and Devices for validation
+* Create proto definition for external api (representing device events from the outside world)
 * Kafka ingress to ACL
 * Postgres projection to Kafka egress
 * Ensure complete separation of write and query side of the data model
+* Replace InMem implementations in integration tests with containerized versions (postgres, kakfa, etc..)
 
 
 ### Finished
