@@ -3,6 +3,7 @@ package service
 import cats.data.State
 import cats.effect.IO
 import cats.implicits.toFoldableOps
+import domain.MotionState.{MotionDetected, MotionNotDetected}
 import domain._
 import repo.SmartHomeEventRepository
 import service.SmartHomeService._
@@ -24,7 +25,7 @@ class SmartHomeServiceImpl(repository: SmartHomeEventRepository[IO]) extends Sma
       // Retrieve list of events from repo
       events <- repository.retrieveEvents(homeId)
       // Create initial SmartHome State
-      initialState = SmartHome(homeId, List.empty, None, None)
+      initialState = SmartHome(homeId, List.empty, None, None, MotionNotDetected)
       // Replay events to build current State
       currentState = buildState(events).runS(initialState).value
       // Apply command to current state, persist new event if needed and reply
@@ -36,6 +37,7 @@ class SmartHomeServiceImpl(repository: SmartHomeEventRepository[IO]) extends Sma
     } yield result
 
   // ! Add validation predicated on state
+  // ! Add device specific validation as well
   private def handleCommand(
     command: Command,
     state: SmartHome
@@ -54,7 +56,8 @@ class SmartHomeServiceImpl(repository: SmartHomeEventRepository[IO]) extends Sma
         }
 
       case GetSmartHome =>
-        CommandResponse(s"Result from ${state.homeId}: ${state.devices} currentTemp: ${state.currentTemperature}")
+        // TODO Improve this response
+        CommandResponse(s"Result from ${state.homeId}: ${state.devices} currentTemp: ${state.currentTemperature} motion: ${state.motionState}")
 
       case SetTemperatureSettings(min, max) =>
         EventSuccess(TemperatureSettingsSet(TemperatureSettings(min, max)))
@@ -67,7 +70,7 @@ class SmartHomeServiceImpl(repository: SmartHomeEventRepository[IO]) extends Sma
       State.modify(applyEventToState(event))
     }
 
-  private def applyEventToState(event: Event): SmartHome => SmartHome = { case state @ SmartHome(_, devices, _, _) =>
+  private def applyEventToState(event: Event): SmartHome => SmartHome = { case state @ SmartHome(_, devices, _, _, _) =>
     event match {
       case DeviceAdded(device) =>
         device match {
@@ -78,7 +81,13 @@ class SmartHomeServiceImpl(repository: SmartHomeEventRepository[IO]) extends Sma
         device match {
           case Thermostat(_, temp) =>
             state.copy(devices = updateDevice(devices, device), currentTemperature = Some(temp))
-          case MotionDetector(_, _) => state.copy(devices = updateDevice(devices, device))
+          case MotionDetector(_, motion) =>
+            val motionState = motion match {
+              case "motion_detected" => MotionDetected
+              case "no_motion_detected" => MotionNotDetected
+              case _ => MotionNotDetected
+            }
+            state.copy(devices = updateDevice(devices, device), motionState = motionState)
         }
 
       case TemperatureSettingsSet(temperatureSettings) => state.copy(temperatureSettings = Some(temperatureSettings))
