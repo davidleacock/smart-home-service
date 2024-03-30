@@ -1,4 +1,4 @@
-package service
+package service.impl
 
 import cats.data.State
 import cats.effect.IO
@@ -6,6 +6,7 @@ import cats.implicits.toFoldableOps
 import domain.MotionState.{MotionDetected, MotionNotDetected}
 import domain._
 import repo.SmartHomeEventRepository
+import service.SmartHomeService
 import service.SmartHomeService._
 
 import java.util.UUID
