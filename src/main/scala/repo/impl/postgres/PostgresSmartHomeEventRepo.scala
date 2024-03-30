@@ -11,7 +11,7 @@ import java.util.UUID
 
 class PostgresSmartHomeEventRepo(val xa: Transactor[IO]) extends SmartHomeEventRepository[IO] {
 
-  import EncoderDecoder._
+  import utils.EncoderDecoder._
 
   override def persistEvent(homeId: UUID, event: Event): IO[Unit] = {
     val eventData = event.asJson.noSpaces
