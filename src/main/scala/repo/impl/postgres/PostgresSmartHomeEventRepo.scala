@@ -6,6 +6,7 @@ import doobie.implicits._
 import io.circe.syntax.EncoderOps
 import repo.SmartHomeEventRepository
 import service.SmartHomeService.Event
+import fs2.Stream
 
 import java.util.UUID
 
@@ -28,13 +29,12 @@ class PostgresSmartHomeEventRepo(val xa: Transactor[IO]) extends SmartHomeEventR
       .void
   }
 
-  // TODO replace with streaming
-  override def retrieveEvents(homeId: UUID): IO[List[Event]] = {
+  override def retrieveEvents(homeId: UUID): Stream[IO, Event] = {
     sql"""
          SELECT event_data FROM events WHERE home_id = ${homeId.toString}
        """
       .query[Event]
-      .to[List]
+      .stream
       .transact(xa)
   }
 }
