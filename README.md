@@ -5,6 +5,13 @@
 
 This service orchestrates smart home devices by processing commands, updating the SmartHome state, and maintaining a comprehensive event log for state changes. We employ CQRS to separate the read and write operations and use Kafka as the message broker to ensure service isolation.
 
+ Currently thinking that aspects of the SmartHome API will be accessible via a REST/gRPC endpoint, things like Adding Devices, setting 
+properties of the SmartHome itself (min max allowed temperatures, personal settings for alerts, etc) and then information about Devices will be consumed via Kafka.
+
+
+![diagram.png](diagram.png)
+
+
 ### SmartHomeService API
 `AddDevice(homeId: UUID, device: Device)` </p>
 `UpdateDevice(homeId: UUID, deviceId: UUID, newValue: DeviceValueType)` </p>
@@ -24,10 +31,11 @@ Will use protobuf to define some external event that the service will consume fr
 * Add FSM to SmartHome ✅
 * Create rule engine for SmartHome and Devices for validation
 * Create proto definition for external api (representing device events from the outside world)
-* Kafka ingress to ACL
+* Kafka ingress to ACL ✅
 * Postgres projection to Kafka egress
 * Ensure complete separation of write and query side of the data model
-* Replace InMem implementations in integration tests with containerized versions (postgres, kakfa, etc..)
+* Replace InMem implementations in integration tests with containerized versions (postgres, kakfa, etc...)
+* Use `Resource` for dependency injection?
 
 
 ### Finished
