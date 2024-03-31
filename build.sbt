@@ -24,8 +24,10 @@ libraryDependencies ++= Seq(
   "io.circe" %% "circe-parser" % "0.14.1",
   "io.circe" %% "circe-generic-extras" % "0.14.1",
   "org.testcontainers" % "postgresql" % "1.15.3",
+  "org.testcontainers" % "testcontainers" % "1.16.2" % Test,
   "org.flywaydb" % "flyway-core" % "7.11.1",
   "com.dimafeng" %% "testcontainers-scala-scalatest" % "0.39.6" % "test",
   "com.dimafeng" %% "testcontainers-scala-postgresql" % "0.39.6" % "test",
-  "com.github.fd4s" %% "fs2-kafka" % "3.2.0"
+  "com.github.fd4s" %% "fs2-kafka" % "3.2.0",
+  "org.testcontainers" % "kafka" % "1.16.2" % "test"
 )
