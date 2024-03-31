@@ -83,6 +83,8 @@ class ApplicationSpec
             case Right(result) => result shouldBe Success
             case Left(error)   => fail(s"$error")
           }
+
+          assert(results.forall(_.isRight))
         }
 
       test.assertNoException
