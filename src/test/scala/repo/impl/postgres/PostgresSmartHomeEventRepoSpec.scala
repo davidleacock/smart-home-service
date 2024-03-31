@@ -51,7 +51,7 @@ class PostgresSmartHomeEventRepoSpec extends AnyWordSpec with Matchers with ForA
       val updateDeviceEvent = DeviceUpdated(Thermostat(deviceId, 10))
       repo.persistEvent(homeId, updateDeviceEvent).unsafeRunSync()
 
-      val result = repo.retrieveEvents(homeId).unsafeRunSync()
+      val result = repo.retrieveEvents(homeId).compile.toList.unsafeRunSync()
 
       result should be(List(event, updateDeviceEvent))
     }
@@ -67,7 +67,7 @@ class PostgresSmartHomeEventRepoSpec extends AnyWordSpec with Matchers with ForA
 
       repo.persistEvent(homeId, event).unsafeRunSync()
 
-      val result = repo.retrieveEvents(homeId).unsafeRunSync()
+      val result = repo.retrieveEvents(homeId).compile.toList.unsafeRunSync()
 
       result should be(List(event))
     }
@@ -88,7 +88,7 @@ class PostgresSmartHomeEventRepoSpec extends AnyWordSpec with Matchers with ForA
 
       repo.persistEvent(homeId, event2).unsafeRunSync()
 
-      val result = repo.retrieveEvents(homeId).unsafeRunSync()
+      val result = repo.retrieveEvents(homeId).compile.toList.unsafeRunSync()
 
       result should be(List(event1, event2))
     }

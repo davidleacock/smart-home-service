@@ -24,7 +24,7 @@ class SmartHomeServiceSpec extends AsyncWordSpec with AsyncIOSpec with Matchers 
         device = Thermostat(deviceId, value = 1)
 
         result <- service.processCommand(homeId, AddDevice(device))
-        persistedEvents <- repo.retrieveEvents(homeId)
+        persistedEvents <- repo.retrieveEvents(homeId).compile.toList
       } yield {
         result shouldBe Success
         persistedEvents should have size 1
@@ -43,7 +43,7 @@ class SmartHomeServiceSpec extends AsyncWordSpec with AsyncIOSpec with Matchers 
 
         _ <- service.processCommand(homeId, AddDevice(device))
         result <- service.processCommand(homeId, UpdateDevice(deviceId, IntDVT(10)))
-        persistedEvents <- repo.retrieveEvents(homeId)
+        persistedEvents <- repo.retrieveEvents(homeId).compile.toList
       } yield {
         result shouldBe Success
         persistedEvents should have size 2
@@ -65,7 +65,7 @@ class SmartHomeServiceSpec extends AsyncWordSpec with AsyncIOSpec with Matchers 
         max = 100
 
         result <- service.processCommand(homeId, SetTemperatureSettings(min, max))
-        persistedEvents <- repo.retrieveEvents(homeId)
+        persistedEvents <- repo.retrieveEvents(homeId).compile.toList
       } yield {
         result shouldBe Success
         persistedEvents should have size 1
@@ -103,7 +103,7 @@ class SmartHomeServiceSpec extends AsyncWordSpec with AsyncIOSpec with Matchers 
         _ <- service.processCommand(homeId, AddDevice(device))
         _ <- service.processCommand(homeId, UpdateDevice(deviceId, IntDVT(10)))
         result <- service.processCommand(homeId, UpdateDevice(deviceId, IntDVT(20)))
-        persistedEvents <- repo.retrieveEvents(homeId)
+        persistedEvents <- repo.retrieveEvents(homeId).compile.toList
       } yield {
         result shouldBe Success
         persistedEvents should have size 3

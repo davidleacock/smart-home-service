@@ -24,7 +24,8 @@ class SmartHomeServiceImpl(repository: SmartHomeEventRepository[IO]) extends Sma
   ): IO[SmartHomeResult] =
     for {
       // Retrieve list of events from repo
-      events <- repository.retrieveEvents(homeId)
+      // ! TODO Now that the repo is streamed from this needs to be wired directly so I can remove the compile.toList part
+      events <- repository.retrieveEvents(homeId).compile.toList
       // Create initial SmartHome State
       initialState = SmartHome(homeId, List.empty, None, None, MotionNotDetected)
       // Replay events to build current State
