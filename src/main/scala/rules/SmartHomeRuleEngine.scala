@@ -35,6 +35,5 @@ class SmartHomeRuleEngine extends RuleEngine[Command, SmartHome, CommandResult] 
         Validated.valid(
           CommandResponse(s"Result from ${state.homeId}: ${state.devices} currentTemp: ${state.currentTemperature} motion: ${state.motionState}")
         )
-
     }
 }
