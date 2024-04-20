@@ -27,6 +27,7 @@ class SmartHomeServiceImpl(
       // ! TODO Now that the repo is streamed from this needs to be wired directly so I can remove the compile.toList part
       events <- repository.retrieveEvents(homeId).compile.toList
       // Create initial SmartHome State
+      // ! TODO create a SmartHome.Init (or .New .Empty?) object to clean this up
       initialState = SmartHome(homeId, List.empty, None, None, MotionNotDetected)
       // Replay events to build current State
       currentState = buildState(events).runS(initialState).value
@@ -41,7 +42,6 @@ class SmartHomeServiceImpl(
           }
         case Invalid(errors) =>
           IO.pure(Failure(errors.toNonEmptyList.toList.mkString(", ")))
-
       }
     } yield result
 
