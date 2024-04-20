@@ -5,6 +5,11 @@ import domain.{SmartHome, TemperatureSettings}
 import service.SmartHomeService._
 
 class SmartHomeRuleEngine extends RuleEngine[Command, SmartHome, CommandResult] {
+
+  // TODO I want to define this in a config so it can be injected in
+  private val minimumTemp = 0
+  private val maximumTemp = 50
+
   override def validate(command: Command, state: SmartHome): ValidatedNec[ValidationError, CommandResult] =
     command match {
       case AddDevice(device) =>
@@ -12,17 +17,19 @@ class SmartHomeRuleEngine extends RuleEngine[Command, SmartHome, CommandResult] 
       case UpdateDevice(deviceId, newValue) =>
         state.devices.find(_.id == deviceId) match {
           case Some(device) =>
-            device.applyUpdate(newValue) match {
-              case Right(updatedDevice) => Validated.valid(EventSuccess(DeviceUpdated(updatedDevice)))
-              case Left(error)          => Validated.invalidNec(error.reason)
-            }
+            device
+              .applyUpdate(newValue)
+              .leftMap(deviceErrors => deviceErrors.map(e => e.reason))
+              .andThen(updatedDevice => Validated.valid(EventSuccess(DeviceUpdated(updatedDevice))))
           case None => Validated.invalidNec(s"Device $deviceId not found.")
         }
       case SetTemperatureSettings(min, max) =>
-        if (min < max && min >= 0 && max <= 50) // Arbitrary range constraints for example
+        if (min < max && min >= minimumTemp && max <= maximumTemp)
           Validated.valid(EventSuccess(TemperatureSettingsSet(TemperatureSettings(min, max))))
         else
-          Validated.invalidNec(s"Invalid temperature settings: [$min, $max] must be between 0 and 50.")
+          Validated.invalidNec(
+            s"Invalid temperature settings: [$min, $max] must be between $minimumTemp and $maximumTemp."
+          )
       case GetSmartHome =>
         // TODO improve this response
         Validated.valid(

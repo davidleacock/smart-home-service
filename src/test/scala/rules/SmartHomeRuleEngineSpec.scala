@@ -5,7 +5,7 @@ import domain.MotionState.MotionNotDetected
 import domain.{IntDVT, SmartHome, TemperatureSettings, Thermostat}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
-import service.SmartHomeService.{AddDevice, DeviceAdded, DeviceUpdated, EventSuccess, SetTemperatureSettings, TemperatureSettingsSet, UpdateDevice}
+import service.SmartHomeService._
 
 import java.util.UUID
 
@@ -50,7 +50,6 @@ class SmartHomeRuleEngineSpec extends AnyWordSpec with Matchers {
 
       val result = ruleEngine.validate(command, state)
       result shouldBe Validated.valid(EventSuccess(TemperatureSettingsSet(TemperatureSettings(10, 20))))
-
     }
 
     "fail to validate SetTemperature command outside of valid range" in {
