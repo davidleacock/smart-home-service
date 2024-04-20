@@ -6,6 +6,7 @@ import domain.{IntDVT, MotionDetector, StringDVT, Thermostat}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AsyncWordSpec
 import repo.impl.inmem.InMemorySmartHomeEventRepo
+import rules.SmartHomeRuleEngine
 import service.SmartHomeService._
 import service.impl.SmartHomeServiceImpl
 
@@ -18,7 +19,8 @@ class SmartHomeServiceSpec extends AsyncWordSpec with AsyncIOSpec with Matchers 
     "process an AddDevice command by adding new device" in {
       val test = for {
         repo <- InMemorySmartHomeEventRepo.create
-        service = new SmartHomeServiceImpl(repo)
+        rules = new SmartHomeRuleEngine
+        service = new SmartHomeServiceImpl(repo, rules)
         homeId = UUID.randomUUID()
         deviceId = UUID.randomUUID()
         device = Thermostat(deviceId, value = 1)
@@ -36,7 +38,8 @@ class SmartHomeServiceSpec extends AsyncWordSpec with AsyncIOSpec with Matchers 
     "process an UpdateDevice command by updating an existing device" in {
       val test = for {
         repo <- InMemorySmartHomeEventRepo.create
-        service = new SmartHomeServiceImpl(repo)
+        rules = new SmartHomeRuleEngine
+        service = new SmartHomeServiceImpl(repo, rules)
         homeId = UUID.randomUUID()
         deviceId = UUID.randomUUID()
         device = Thermostat(deviceId, value = 1)
@@ -59,10 +62,11 @@ class SmartHomeServiceSpec extends AsyncWordSpec with AsyncIOSpec with Matchers 
     "process an SetTemperatureSettings command by setting min and max value for SmartHome" in {
       val test = for {
         repo <- InMemorySmartHomeEventRepo.create
-        service = new SmartHomeServiceImpl(repo)
+        rules = new SmartHomeRuleEngine
+        service = new SmartHomeServiceImpl(repo, rules)
         homeId = UUID.randomUUID()
         min = 0
-        max = 100
+        max = 49
 
         result <- service.processCommand(homeId, SetTemperatureSettings(min, max))
         persistedEvents <- repo.retrieveEvents(homeId).compile.toList
@@ -83,7 +87,8 @@ class SmartHomeServiceSpec extends AsyncWordSpec with AsyncIOSpec with Matchers 
     "process an UpdateDevice command for a device that hasn't been updated by returning a Failure" in {
       val test = for {
         repo <- InMemorySmartHomeEventRepo.create
-        service = new SmartHomeServiceImpl(repo)
+        rules = new SmartHomeRuleEngine
+        service = new SmartHomeServiceImpl(repo, rules)
         homeId = UUID.randomUUID()
         deviceId = UUID.randomUUID()
 
@@ -96,7 +101,8 @@ class SmartHomeServiceSpec extends AsyncWordSpec with AsyncIOSpec with Matchers 
     "process an multiple UpdateDevice command by updating an existing device" in {
       val test = for {
         repo <- InMemorySmartHomeEventRepo.create
-        service = new SmartHomeServiceImpl(repo)
+        rules = new SmartHomeRuleEngine
+        service = new SmartHomeServiceImpl(repo, rules)
         homeId = UUID.randomUUID()
         deviceId = UUID.randomUUID()
         device = Thermostat(deviceId, value = 1)
@@ -119,7 +125,8 @@ class SmartHomeServiceSpec extends AsyncWordSpec with AsyncIOSpec with Matchers 
     "process an GetSmartHome command by returning existing SmartHome state" in {
       val test = for {
         repo <- InMemorySmartHomeEventRepo.create
-        service = new SmartHomeServiceImpl(repo)
+        rules = new SmartHomeRuleEngine
+        service = new SmartHomeServiceImpl(repo, rules)
         homeId = UUID.randomUUID()
         deviceId = UUID.randomUUID()
         device = Thermostat(deviceId, value = 1)
@@ -135,7 +142,8 @@ class SmartHomeServiceSpec extends AsyncWordSpec with AsyncIOSpec with Matchers 
     "process an Add/UpdateDevice command for multiple devices and return SmartHome state" in {
       val test = for {
         repo <- InMemorySmartHomeEventRepo.create
-        service = new SmartHomeServiceImpl(repo)
+        rules = new SmartHomeRuleEngine
+        service = new SmartHomeServiceImpl(repo, rules)
         homeId = UUID.randomUUID()
         thermostatId = UUID.randomUUID()
         thermostat = Thermostat(thermostatId, value = 1)
@@ -157,7 +165,8 @@ class SmartHomeServiceSpec extends AsyncWordSpec with AsyncIOSpec with Matchers 
     "ignore an UpdateDevice command when an invalid type is used" in {
       val test = for {
         repo <- InMemorySmartHomeEventRepo.create
-        service = new SmartHomeServiceImpl(repo)
+        rules = new SmartHomeRuleEngine
+        service = new SmartHomeServiceImpl(repo, rules)
         homeId = UUID.randomUUID()
         thermostatId = UUID.randomUUID()
         thermostat = Thermostat(thermostatId, value = 1)
@@ -177,7 +186,8 @@ class SmartHomeServiceSpec extends AsyncWordSpec with AsyncIOSpec with Matchers 
     "process an UpdateDevice command for a motion detector" in {
       val test = for {
         repo <- InMemorySmartHomeEventRepo.create
-        service = new SmartHomeServiceImpl(repo)
+        rules = new SmartHomeRuleEngine
+        service = new SmartHomeServiceImpl(repo, rules)
         homeId = UUID.randomUUID()
 
         motionId = UUID.randomUUID()
