@@ -24,6 +24,7 @@ class SmartHomeRuleEngine extends RuleEngine[Command, SmartHome, CommandResult] 
         else
           Validated.invalidNec(s"Invalid temperature settings: [$min, $max] must be between 0 and 50.")
       case GetSmartHome =>
+        // TODO improve this response
         Validated.valid(
           CommandResponse(s"Result from ${state.homeId}: ${state.devices} currentTemp: ${state.currentTemperature} motion: ${state.motionState}")
         )

@@ -30,9 +30,9 @@ class SmartHomeServiceImpl(
       initialState = SmartHome(homeId, List.empty, None, None, MotionNotDetected)
       // Replay events to build current State
       currentState = buildState(events).runS(initialState).value
+      // Run the command through the rules to see if the state can process it properly
       // Apply command to current state, persist new event if needed and reply
-      validationResult = ruleEngine.validate(command, currentState)
-      result <- validationResult match {
+      result <- ruleEngine.validate(command, currentState) match {
         case Valid(cmd) =>
           cmd match {
             case EventSuccess(event) => repository.persistEvent(homeId, event).as(Success) // TODO handle errors from the repo
