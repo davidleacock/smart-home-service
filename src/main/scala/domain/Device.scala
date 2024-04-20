@@ -1,5 +1,7 @@
 package domain
 
+import cats.data.{Validated, ValidatedNec}
+
 import java.util.UUID
 
 sealed trait DeviceValueType {
@@ -20,7 +22,7 @@ object DeviceValueTypeImplicits {
 sealed trait Device {
   val id: UUID
   val currValue: DeviceValueType
-  def applyUpdate(newValue: DeviceValueType): Either[DeviceError, Device]
+  def applyUpdate(newValue: DeviceValueType): ValidatedNec[DeviceError, Device]
 }
 
 case class DeviceError(reason: String)
@@ -30,25 +32,25 @@ case class Thermostat(
   value: Int)
     extends Device {
 
-  override def applyUpdate(newValue: DeviceValueType): Either[DeviceError, Device] =
-    // ! arbitrary error value - replace with rule validation
+  // TODO Add more interesting validation to show the power of the invalid type
+  override def applyUpdate(newValue: DeviceValueType): ValidatedNec[DeviceError, Device] =
     newValue match {
-      case IntDVT(v) if v != 999 => Right(copy(value = v))
-      case _                     => Left(DeviceError("Invalid value for Thermostat"))
+      case IntDVT(v) if v != 999 => Validated.valid(copy(value = v))
+      case _                     => Validated.invalidNec(DeviceError("Invalid value for Thermostat"))
     }
 
   override val currValue: DeviceValueType = IntDVT(this.value)
 }
 
+// TODO Add more interesting validation to show the power of the invalid type
 case class MotionDetector(
   id: UUID,
   value: String)
     extends Device {
-  override def applyUpdate(newValue: DeviceValueType): Either[DeviceError, Device] =
-    // ! arbitrary error value - replace with rule validation
+  override def applyUpdate(newValue: DeviceValueType): ValidatedNec[DeviceError, Device] =
     newValue match {
-      case StringDVT(v) if v != "error" => Right(copy(value = v))
-      case _                            => Left(DeviceError("Invalid value for MotionDetector"))
+      case StringDVT(v) if v != "error" => Validated.valid(copy(value = v))
+      case _                            => Validated.invalidNec(DeviceError("Invalid value for MotionDetector"))
     }
 
   override val currValue: DeviceValueType = StringDVT(this.value)
