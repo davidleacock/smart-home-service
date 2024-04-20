@@ -15,6 +15,11 @@ object SmartHomeService {
   case object GetSmartHome extends Command
   case class SetTemperatureSettings(minimumTemperature: Int, maximumTemperature: Int) extends Command
 
+  sealed trait CommandResult
+  case class EventSuccess(event: Event) extends CommandResult
+  case class CommandResponse(payload: String) extends CommandResult
+  case class CommandFailed(reason: String) extends CommandResult
+
   // Device commands
   case class AddDevice(device: Device) extends Command
   case class UpdateDevice(deviceId: UUID, newValue: DeviceValueType) extends Command
