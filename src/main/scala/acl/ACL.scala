@@ -4,7 +4,7 @@ import domain.{Device, DeviceValueType}
 import io.circe.generic.semiauto.deriveDecoder
 import io.circe.{Decoder, parser}
 import service.SmartHomeService
-import service.SmartHomeService.UpdateDevice
+import service.SmartHomeService.{AddDevice, UpdateDevice}
 import utils.EncoderDecoder
 
 import java.util.UUID
@@ -14,6 +14,7 @@ object ACL {
 
   case class ExternalMessage(cmdType: String, payload: Option[MessagePayload])
   case class MessagePayload(homeId: UUID, deviceId: Option[UUID], newValue: Option[DeviceValueType])
+  case class DevicePayload(homeId: UUID, deviceId: Option[UUID], newValue: Option[DeviceValueType])
 
   implicit val deviceDecoder: Decoder[Device] = EncoderDecoder.decoderDevice
   implicit val decodeDeviceValueType: Decoder[DeviceValueType] = EncoderDecoder.decodeDeviceValueType
@@ -31,6 +32,15 @@ object ACL {
             deviceId <- payload.deviceId.toRight(new Exception("deviceId missing for UpdateDevice"))
             newValue <- payload.newValue.toRight(new Exception("newValue missing for UpdateDevice"))
           } yield UpdateDevice(deviceId, newValue)
+
+        // ! TODO Finish ACL
+        case "AddDevice" => {
+          for {
+            payload <- msg.payload.toRight(new Exception("payload missing for AddDevice"))
+            device <- payload.device.toRight("")
+
+          } yield AddDevice()
+        }
 
         // ! This technical may not be an error, but rather we're just not interested in this data. This will get
         // ! changed after I write the custom reply that i'll flesh out during testing
