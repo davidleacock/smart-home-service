@@ -1,13 +1,10 @@
 package acl
 
-import domain.{DeviceValueType, IntDVT, MotionDetector, StringDVT, Thermostat}
+import domain.{IntDVT, MotionDetector, StringDVT, Thermostat}
 import io.circe.generic.semiauto._
-import io.circe.{Decoder, parser}
+import io.circe._
 import service.SmartHomeService
 import service.SmartHomeService.{AddDevice, UpdateDevice}
-import io.circe._
-import io.circe.parser._
-import io.circe.syntax._
 
 import java.util.UUID
 
@@ -53,7 +50,6 @@ object ACL {
             Right(AddDevice(Thermostat(deviceId, initialValue)))
           case AddDevicePayload(deviceType, deviceId, StringValue(initialValue)) if deviceType == "MotionDetector" =>
             Right(AddDevice(MotionDetector(deviceId, initialValue)))
-
           case _ => Left(new Exception("Invalid payload for AddDevice"))
         }
 
@@ -64,7 +60,6 @@ object ACL {
             Right(UpdateDevice(deviceId, StringDVT(updatedValue)))
           case _ => Left(new Exception("Invalid payload for UpdateDevice"))
         }
-
 
         // ! This technical may not be an error, but rather we're just not interested in this data. This will get
         // ! changed after I write the custom reply that i'll flesh out during testing
