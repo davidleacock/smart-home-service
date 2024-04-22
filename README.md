@@ -43,6 +43,6 @@ command to be at the home-level and simply just device changes come through kafk
 ~~## In Progress: Postgres Repo
 Add postgres repo that can be used in an integration test to verify schema and correct usage of doobie library~~ <p>
 ~~## In Progress: Event Sourcing
-We're implementing the event sourcing pattern to underpin our state management approach. By capturing all state changes as events and persisting them in an event store, we create an audit trail of activities within the home. This event log is crucial for reconstructing the SmartHome state, enabling accurate processing of incoming commands.~~
-~~## In Progress: Kafka ingress consumer <p>
-Will use protobuf to define some external event that the service will consume from via Kafka, then translate that into the SmartHome api. Currently, I'm thinking that information about devices will come through the kafka ingress like we're reading stream of data from outside devices, whereas adding devices and adding properties about the home will come through a grpc or rest endpoint?~~
+We're implementing the event sourcing pattern to underpin our state management approach. By capturing all state changes as events and persisting them in an event store, we create an audit trail of activities within the home. This event log is crucial for reconstructing the SmartHome state, enabling accurate processing of incoming commands.~~<p>
+~~## In Progress: Kafka ingress consumer
+Will use protobuf to define some external event that the service will consume from via Kafka, then translate that into the SmartHome api. Currently, I'm thinking that information about devices will come through the kafka ingress like we're reading stream of data from outside devices, whereas adding devices and adding properties about the home will come through a grpc or rest endpoint?~~ <p>
