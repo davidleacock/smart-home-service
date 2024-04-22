@@ -53,11 +53,14 @@ class ApplicationSpec
     container1 and container2
   }
 
+
   override def afterContainersStart(container: Containers): Unit = {
     super.afterContainersStart(container)
 
+    // Once containers are running we need to migrate the db and setup kafka
     container match {
       case pg and kf =>
+        // DB Migration
         Flyway
           .configure()
           .dataSource(pg.container.getJdbcUrl, pg.container.getUsername, pg.container.getPassword)
@@ -78,7 +81,6 @@ class ApplicationSpec
   }
 
   override implicit def executionContext: ExecutionContext = ExecutionContext.global
-
 
   "SmartHome Application" should {
 
@@ -155,9 +157,9 @@ class ApplicationSpec
       } yield result
 
       val test = scenario.unsafeToFuture().map {
-        case SmartHomeService.Success           => succeed
-        case SmartHomeService.ResponseResult(_) => fail("Unexpected return type in test")
-        case SmartHomeService.Failure(reason)   => fail(s"Unexpected return type in test $reason")
+        case SmartHomeService.Success                  => succeed
+        case SmartHomeService.ResponseResult(response) => fail(s"Unexpected return type: ResponseResult $response")
+        case SmartHomeService.Failure(reason)          => fail(s"Unexpected return type: Failure $reason")
       }
 
       test.assertNoException
