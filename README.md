@@ -37,6 +37,7 @@ command to be at the home-level and simply just device changes come through kafk
 * Replace InMem implementations in integration tests with containerized versions (postgres, kakfa, etc...) ✅
 * Add some more interesting home/device rules to show the power of Validated
 * Use `Resource` for dependency injection?
+* REST endpoint for SmartHome Home-specific commands
 * Create a NotificationService so any alerts the SmartHome user can be notified (motion detected, etc)
 
 
