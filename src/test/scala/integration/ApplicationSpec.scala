@@ -147,10 +147,9 @@ class ApplicationSpec
         result <- kafkaConsumer
           .consumeEvent("device-events-topic")
           .evalMap { event =>
-            println(s"got events $event")
             for {
               command <- IO.fromEither(ACL.parseEvent(event))
-              result <- smartHomeService.processCommand(UUID.randomUUID(), command)
+              result <- smartHomeService.processCommand(UUID.randomUUID(), command) // TODO How do we map the device information to the home it belongs to?
             } yield result
           }
           .take(1)
