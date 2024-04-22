@@ -20,9 +20,9 @@ properties of the SmartHome itself (min max allowed temperatures, personal setti
 `SetTemperatureSettings(min: Int, max: Int)` </p>
 
 
-## In Progress: Kafka ingress consumer <p>
-Will use protobuf to define some external event that the service will consume from via Kafka, then translate that into the SmartHome api. Currently, I'm thinking that information about devices will come through the kafka ingress like we're reading stream of data from outside devices, whereas adding devices and adding properties about the home will come through a grpc or rest endpoint?
-
+## In Progress: REST endpoint for Home commands <p>
+Whereas for Device-level events (Add/Update) will be coming through kafka, the commands that are at the level of the Home will come through REST.  The user can create a SmartHome and set parameters (min/max temp, etc). I also think I may move the AddDevice
+command to be at the home-level and simply just device changes come through kafka.
 
 
 ### Remaining work...
@@ -34,7 +34,7 @@ Will use protobuf to define some external event that the service will consume fr
 * Kafka ingress to ACL ✅
 * Postgres projection to Kafka egress
 * Ensure complete separation of write and query side of the data model
-* Replace InMem implementations in integration tests with containerized versions (postgres, kakfa, etc...)
+* Replace InMem implementations in integration tests with containerized versions (postgres, kakfa, etc...) ✅
 * Add some more interesting home/device rules to show the power of Validated
 * Use `Resource` for dependency injection?
 
@@ -44,3 +44,5 @@ Will use protobuf to define some external event that the service will consume fr
 Add postgres repo that can be used in an integration test to verify schema and correct usage of doobie library~~ <p>
 ~~## In Progress: Event Sourcing
 We're implementing the event sourcing pattern to underpin our state management approach. By capturing all state changes as events and persisting them in an event store, we create an audit trail of activities within the home. This event log is crucial for reconstructing the SmartHome state, enabling accurate processing of incoming commands.~~
+~~## In Progress: Kafka ingress consumer <p>
+Will use protobuf to define some external event that the service will consume from via Kafka, then translate that into the SmartHome api. Currently, I'm thinking that information about devices will come through the kafka ingress like we're reading stream of data from outside devices, whereas adding devices and adding properties about the home will come through a grpc or rest endpoint?~~
