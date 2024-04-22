@@ -8,6 +8,7 @@ This service orchestrates smart home devices by processing commands, updating th
  Currently thinking that aspects of the SmartHome API will be accessible via a REST/gRPC endpoint, things like Adding Devices, setting 
 properties of the SmartHome itself (min max allowed temperatures, personal settings for alerts, etc) and then information about Devices will be consumed via Kafka.
 
+### Note: There is no runnable Main yet. As I'm building out and testing the components I'm using <i>ApplicationSpec</i> as the playground to wire up everything, test it out, fix, refactor, etc.  Once I'm happy with all the pieces working together then I will build the runnable main
 
 ![diagram.png](diagram.png)
 

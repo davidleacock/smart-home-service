@@ -35,7 +35,11 @@ import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
-// ! WIP - Test fails, need to finish work on ACL.
+/*
+    Note:  Since there currently is no runnable Application as I build this thing out. I'm using the ApplicationSpec
+    as a place to wire up the pieces and test them out, fix things, make changes etc.  Once I'm happy with the design
+    then I can create the runnable Main
+ */
 
 class ApplicationSpec
     extends AsyncWordSpec
@@ -119,22 +123,20 @@ class ApplicationSpec
         clientId = "application-spec-client-id"
       )
 
-//        val testMessage =
-//          "{\"cmdType\":\"AddDevice\", \"payload\":{\"deviceType\":\"Thermostat\", \"settings\":{\"value\":22}}}"
 
       val deviceId = UUID.randomUUID()
-      val newValue = IntDVT(10)
+      val newValue = 10
 
       val testMessage =
         s"""
            |{
-           |  "cmdType":"UpdateDevice",
+           |  "cmdType":"AddDevice",
            |  "payload": {
-           |    "homeId": "${UUID.randomUUID()}",
+           |    "deviceType": "Thermostat",
            |    "deviceId": "$deviceId",
-           |    "newValue": {
-           |      "type": "IntDVT",
-           |      "value": 10
+           |    "initialValue": {
+           |      "type": "int",
+           |      "value": $newValue
            |    }
            |  }
            |}
