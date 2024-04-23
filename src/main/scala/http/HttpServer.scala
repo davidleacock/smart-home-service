@@ -11,6 +11,8 @@ import org.http4s.implicits._
 import org.http4s.server.{Router, Server}
 import service.SmartHomeService
 import service.SmartHomeService.GetSmartHome
+
+// ! Make this an object that returns the server?
 class HttpServer(smartHomeService: SmartHomeService[IO]) {
 
   // ! TODO - test this
@@ -24,14 +26,17 @@ class HttpServer(smartHomeService: SmartHomeService[IO]) {
 
   // Is this what I want to return from the HttpServer?
   val server: Resource[IO, Server] =
-    EmberServerBuilder.default[IO]
+    EmberServerBuilder
+      .default[IO]
       .withHost(ipv4"0.0.0.0")
       .withPort(port"8080")
       .withHttpApp(httpApp)
       .build
 
-  server.use{ server =>
-    println(s"Server up and running ${server.address}")
-    IO.never // <- non terminating IO
-  }.as(ExitCode.Success)
+  server
+    .use { server =>
+      println(s"Server up and running ${server.address}")
+      IO.never // <- non terminating IO
+    }
+    .as(ExitCode.Success)
 }
