@@ -33,5 +33,8 @@ libraryDependencies ++= Seq(
   "com.dimafeng" %% "testcontainers-scala-kafka" % "0.41.3" % "test",
   "com.github.fd4s" %% "fs2-kafka" % "3.2.0",
   "org.testcontainers" % "kafka" % "1.19.7" % "test",
-  "org.scala-lang.modules" %% "scala-java8-compat" % "1.0.1"
+  "org.scala-lang.modules" %% "scala-java8-compat" % "1.0.1",
+  "org.http4s" %% "http4s-ember-client" % "0.23.26",
+  "org.http4s" %% "http4s-ember-server" % "0.23.26",
+  "org.http4s" %% "http4s-dsl" % "0.23.26",
 )
