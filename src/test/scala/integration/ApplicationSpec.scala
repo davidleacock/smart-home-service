@@ -3,17 +3,6 @@ package integration
 import acl.ACL
 import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec
-import domain.IntDVT
-import org.flywaydb.core.Flyway
-
-import java.util.Properties
-import java.util.concurrent.TimeUnit
-import scala.jdk.CollectionConverters._
-//import scala.compat.java8.FutureConverters
-//import scala.compat.java8.FutureConverters._
-
-//import java.util.concurrent.Future
-//import com.dimafeng.testcontainers.scalatest.TestContainerForAll
 import com.dimafeng.testcontainers.lifecycle.and
 import com.dimafeng.testcontainers.scalatest.TestContainersForAll
 import com.dimafeng.testcontainers.{KafkaContainer, PostgreSQLContainer}
@@ -23,6 +12,7 @@ import doobie.util.transactor.Transactor.Aux
 import org.apache.kafka.clients.admin.{AdminClient, AdminClientConfig, NewTopic}
 import org.apache.kafka.clients.producer.{KafkaProducer, ProducerConfig, ProducerRecord}
 import org.apache.kafka.common.serialization.StringSerializer
+import org.flywaydb.core.Flyway
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AsyncWordSpec
@@ -31,9 +21,11 @@ import rules.SmartHomeRuleEngine
 import service.SmartHomeService
 import service.impl.SmartHomeServiceImpl
 
-import java.util.UUID
+import java.util.concurrent.TimeUnit
+import java.util.{Properties, UUID}
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
+import scala.jdk.CollectionConverters._
 
 /*
     Note:  Since there currently is no runnable Application as I build this thing out. I'm using the ApplicationSpec
@@ -57,10 +49,8 @@ class ApplicationSpec
     container1 and container2
   }
 
-
   override def afterContainersStart(container: Containers): Unit = {
     super.afterContainersStart(container)
-
     // Once containers are running we need to migrate the db and setup kafka
     container match {
       case pg and kf =>
@@ -122,7 +112,6 @@ class ApplicationSpec
         groupId = "application-spec-id",
         clientId = "application-spec-client-id"
       )
-
 
       val deviceId = UUID.randomUUID()
       val newValue = 10
