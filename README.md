@@ -13,7 +13,11 @@ properties of the SmartHome itself (min max allowed temperatures, personal setti
 ![diagram.png](diagram.png)
 
 
-### SmartHomeService API
+### SmartHomeService Algebra
+The API for the service comes in two flavours, <i>SmartHome</i> commands and information about <i>Device</i> events. <p>
+The user will have the ability to modify things about a SmartHome, such as adding a new device, creating rules about things like temperature settings and retrieving
+information about the home itself. This will be achieved through a simple REST interface.  Whereas information pertaining to the outside world of devices and their status will be consumed through Kafka.
+
 `AddDevice(homeId: UUID, device: Device)` </p>
 `UpdateDevice(homeId: UUID, deviceId: UUID, newValue: DeviceValueType)` </p>
 `GetSmartHome(homeId: UUID)` </p>
@@ -21,10 +25,12 @@ properties of the SmartHome itself (min max allowed temperatures, personal setti
 
 
 ## In Progress: REST endpoint for Home commands <p>
-Whereas for Device-level events (Add/Update) will be coming through kafka, the commands that are at the level of the Home will come through REST.  The user can create a SmartHome and set parameters (min/max temp, etc). I also think I may move the AddDevice
-command to be at the home-level and simply just device changes come through kafka.
+Whereas for Device-level events (~~Add~~/Update) will be coming through kafka, the commands that are at the level of the Home will come through REST.  The user can create a SmartHome, Add Devices and set parameters (min/max temp, etc). ~~I also think I may move the AddDevice
+command to be at the home-level and simply just device changes come through kafka.~~ 
 
-
+## Experiment with Outbox pattern to build read model <p>
+Originally I thought about just creating some database triggers to determine if changes have been made to the Write database and the project that out to build the read model but as I did some research on this I saw that the `Outbox Pattern` was seen as a good way to accomplish this so I'd like to experiment with that first. I will need to update the diagram
+ 
 ### Remaining work...
 * Add postgres repo ✅
 * integration tests with postgres repo ✅
@@ -33,7 +39,7 @@ command to be at the home-level and simply just device changes come through kafk
 * Create proto definition for external api (representing device events from the outside world)
 * Kafka ingress to ACL ✅
 * Postgres projection to Kafka egress
-* Ensure complete separation of write and query side of the data model
+* Ensure complete separation of write and query side of the data model - Outbox pattern?
 * Replace InMem implementations in integration tests with containerized versions (postgres, kakfa, etc...) ✅
 * Add some more interesting home/device rules to show the power of Validated
 * Use `Resource` for dependency injection?
