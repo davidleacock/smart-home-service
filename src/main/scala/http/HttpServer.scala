@@ -8,36 +8,46 @@ import org.http4s.dsl.impl.UUIDVar
 import org.http4s.dsl.io._
 import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.implicits._
+import org.http4s.server.middleware.Logger
 import org.http4s.server.{Router, Server}
 import service.SmartHomeService
-import service.SmartHomeService.GetSmartHome
+import service.SmartHomeService.{Failure, GetSmartHome, ResponseResult, Success}
 
-// ! Make this an object that returns the server?
-// ! TODO we should build a web server and pass it in? Can you mock a Resource?
-class HttpServer(smartHomeService: SmartHomeService[IO]) {
+// ! TODO - test this
+class HttpServer(serverResource: Resource[IO, Server]) {
 
-  // ! TODO - test this
-  // ! TODO - add more routes
   // ! TODO - handle errors
-  private val routes = HttpRoutes.of[IO] { case GET -> Root / "home" / UUIDVar(homeId) =>
-    Ok(smartHomeService.processCommand(homeId, GetSmartHome).map((result: SmartHomeService.SmartHomeResult) => s"Home $homeId - $result"))
-  }
+  def start: IO[Unit] =
+    serverResource
+      .use { server =>
+        IO(println(s"Server up and running ${server.address}")) *> IO.never
+      }
+      .as(ExitCode.Success)
+}
 
-  private val httpApp: HttpApp[IO] = Router("/" -> routes).orNotFound
+object HttpServer {
 
-  // Is this what I want to return from the HttpServer?
-  val server: Resource[IO, Server] =
-    EmberServerBuilder
-      .default[IO]
-      .withHost(ipv4"0.0.0.0")
-      .withPort(port"8080")
-      .withHttpApp(httpApp)
-      .build
-
-  server
-    .use { server =>
-      println(s"Server up and running ${server.address}")
-      IO.never // <- non terminating IO
+  // ! TODO - Add more commands/routes, break down the failures and responses even further
+  def createServerResources(smartHomeService: SmartHomeService[IO]): Resource[IO, Server] = {
+    val routes = HttpRoutes.of[IO] { case GET -> Root / "home" / UUIDVar(homeId) =>
+      smartHomeService
+        .processCommand(homeId, GetSmartHome)
+        .flatMap {
+          case Success => Ok("SmartHome command Success")
+          case ResponseResult(payload) => Ok(s"SmartHome response: $payload")
+          case Failure(reason) => BadRequest(s"Unable to retrieve SmartHome reason:$reason")
+        }
     }
-    .as(ExitCode.Success)
+
+    val httpApp: HttpApp[IO] = Logger.httpApp(logHeaders = true, logBody = true) {
+      Router("/" -> routes).orNotFound
+    }
+
+    EmberServerBuilder
+          .default[IO]
+          .withHost(ipv4"0.0.0.0")
+          .withPort(port"8080")
+          .withHttpApp(httpApp)
+          .build
+  }
 }
