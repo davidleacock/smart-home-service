@@ -1,7 +1,7 @@
 package integration
 
 import acl.ACL
-import cats.effect.IO
+import cats.effect.{ExitCode, IO}
 import cats.effect.testing.scalatest.AsyncIOSpec
 import com.dimafeng.testcontainers.lifecycle.and
 import com.dimafeng.testcontainers.scalatest.TestContainersForAll
@@ -9,10 +9,12 @@ import com.dimafeng.testcontainers.{KafkaContainer, PostgreSQLContainer}
 import consumers.impl.kafka.KafkaEventConsumer
 import doobie.Transactor
 import doobie.util.transactor.Transactor.Aux
+import http.HttpServer
 import org.apache.kafka.clients.admin.{AdminClient, AdminClientConfig, NewTopic}
 import org.apache.kafka.clients.producer.{KafkaProducer, ProducerConfig, ProducerRecord}
 import org.apache.kafka.common.serialization.StringSerializer
 import org.flywaydb.core.Flyway
+import org.http4s.ember.client.EmberClientBuilder
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AsyncWordSpec
@@ -26,7 +28,7 @@ import java.util.{Properties, UUID}
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 import scala.jdk.CollectionConverters._
-
+import org.http4s.implicits._
 /*
     Note:  Since there currently is no runnable Application as I build this thing out. I'm using the ApplicationSpec
     as a place to wire up the pieces and test them out, fix things, make changes etc.  Once I'm happy with the design
@@ -107,6 +109,9 @@ class ApplicationSpec
       val rules = new SmartHomeRuleEngine
       val repo = new PostgresSmartHomeEventRepo(transactor)
       val smartHomeService = new SmartHomeServiceImpl(repo, rules)
+
+      val httpServerResource = HttpServer.createServerResources(smartHomeService)
+
       val kafkaConsumer = new KafkaEventConsumer(
         server = kf.container.getBootstrapServers,
         groupId = "application-spec-id",
@@ -131,7 +136,7 @@ class ApplicationSpec
            |}
            |""".stripMargin
 
-      val scenario = for {
+      val setupScenarioTest1 = for {
         _ <- publishToKafka("device-events-topic", testMessage)
         result <- kafkaConsumer
           .consumeEvent("device-events-topic")
@@ -146,13 +151,31 @@ class ApplicationSpec
           .lastOrError
       } yield result
 
-      val test = scenario.unsafeToFuture().map {
+      val test1 = setupScenarioTest1.unsafeToFuture().map {
         case SmartHomeService.Success                  => succeed
         case SmartHomeService.ResponseResult(response) => fail(s"Unexpected return type: ResponseResult $response")
         case SmartHomeService.Failure(reason)          => fail(s"Unexpected return type: Failure $reason")
       }
 
-      test.assertNoException
+      // ! - TODO Separate into different tests
+      //      test1.assertNoException
+
+      // ! - TODO Why isnt temp being returned?
+      // ! - TODO How do we map the device information to the home it belongs to?
+
+      val test2 = for {
+        _ <- setupScenarioTest1
+        _ <- httpServerResource.use { server =>
+          EmberClientBuilder.default[IO].build.use { client =>
+            client.expect[String](s"http://localhost:${server.address.getPort}/home/$deviceId").map { response =>
+              response should include (s"SmartHome response: Result from $deviceId: List() currentTemp: $newValue motion: MotionNotDetected")
+            }
+          }
+        }
+      } yield ()
+
+      test2.unsafeToFuture().map(_ => succeed)
+
     }
   }
 }

@@ -34,8 +34,8 @@ class SmartHomeServiceImpl(
       // Run the command through the rules to see if the state can process it properly
       // Apply command to current state, persist new event if needed and reply
       result <- ruleEngine.validate(command, currentState) match {
-        case Valid(cmd) =>
-          cmd match {
+        case Valid(cmdResult) =>
+          cmdResult match {
             case EventSuccess(event) => repository.persistEvent(homeId, event).as(Success) // TODO handle errors from the repo
             case CommandResponse(payload) => IO.pure(ResponseResult(payload))
             case CommandFailed(reason)    => IO.pure(Failure(reason))
