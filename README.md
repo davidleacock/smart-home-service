@@ -8,10 +8,11 @@ This service orchestrates smart home devices by processing commands, updating th
  Currently thinking that aspects of the SmartHome API will be accessible via a REST/gRPC endpoint, things like Adding Devices, setting 
 properties of the SmartHome itself (min max allowed temperatures, personal settings for alerts, etc) and then information about Devices will be consumed via Kafka.
 
+In order to build out the read model as well as the kafka egress I will make use of the Outbox Pattern. I will transactionally persist both the domain events for the state as well as in an outbox.
+
 ### Note: There is no runnable Main yet. As I'm building out and testing the components I'm using <i>ApplicationSpec</i> as the playground to wire up everything, test it out, fix, refactor, etc.  Once I'm happy with all the pieces working together then I will build the runnable main
 
 ![diagram.png](diagram.png)
-
 
 ### SmartHomeService Algebra
 The API for the service comes in two flavours, <i>SmartHome</i> commands and information about <i>Device</i> events. <p>
@@ -38,6 +39,7 @@ Originally I thought about just creating some database triggers to determine if 
 * Create basic rule engine for SmartHome (✅) and Devices for validation (✅)
 * Create proto definition for external api (representing device events from the outside world)
 * Kafka ingress to ACL ✅
+* OutboxProcessor to query outbox and publish to kafka / write to read model
 * Postgres projection to Kafka egress
 * Ensure complete separation of write and query side of the data model - Outbox pattern?
 * Replace InMem implementations in integration tests with containerized versions (postgres, kakfa, etc...) ✅

@@ -13,13 +13,14 @@ import service.SmartHomeService
 import service.SmartHomeService.GetSmartHome
 
 // ! Make this an object that returns the server?
+// ! TODO we should build a web server and pass it in? Can you mock a Resource?
 class HttpServer(smartHomeService: SmartHomeService[IO]) {
 
   // ! TODO - test this
   // ! TODO - add more routes
   // ! TODO - handle errors
   private val routes = HttpRoutes.of[IO] { case GET -> Root / "home" / UUIDVar(homeId) =>
-    Ok(smartHomeService.processCommand(homeId, GetSmartHome).map(result => s"Home $homeId - $result"))
+    Ok(smartHomeService.processCommand(homeId, GetSmartHome).map((result: SmartHomeService.SmartHomeResult) => s"Home $homeId - $result"))
   }
 
   private val httpApp: HttpApp[IO] = Router("/" -> routes).orNotFound
