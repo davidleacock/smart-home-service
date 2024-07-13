@@ -25,6 +25,7 @@ class SmartHomeServiceImpl(
     for {
       // Retrieve list of events from repo
       // ! TODO Now that the repo is streamed from this needs to be wired directly so I can remove the compile.toList part
+      // ? What happens if the list is empty? What is empty Home vs new Home?
       events <- repository.retrieveEvents(homeId).compile.toList
       // Create initial SmartHome State
       // ! TODO create a SmartHome.Init (or .New .Empty?) object to clean this up

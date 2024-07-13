@@ -1,7 +1,7 @@
 package integration
 
 import acl.ACL
-import cats.effect.{ExitCode, IO}
+import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec
 import com.dimafeng.testcontainers.lifecycle.and
 import com.dimafeng.testcontainers.scalatest.TestContainersForAll
@@ -9,7 +9,7 @@ import com.dimafeng.testcontainers.{KafkaContainer, PostgreSQLContainer}
 import consumers.impl.kafka.KafkaEventConsumer
 import doobie.Transactor
 import doobie.util.transactor.Transactor.Aux
-import http.HttpServer
+import http.SmartHomeHttpServer
 import org.apache.kafka.clients.admin.{AdminClient, AdminClientConfig, NewTopic}
 import org.apache.kafka.clients.producer.{KafkaProducer, ProducerConfig, ProducerRecord}
 import org.apache.kafka.common.serialization.StringSerializer
@@ -21,6 +21,7 @@ import org.scalatest.wordspec.AsyncWordSpec
 import repo.impl.postgres.PostgresSmartHomeEventRepo
 import rules.SmartHomeRuleEngine
 import service.SmartHomeService
+import service.SmartHomeService.SmartHomeResult
 import service.impl.SmartHomeServiceImpl
 
 import java.util.concurrent.TimeUnit
@@ -28,13 +29,12 @@ import java.util.{Properties, UUID}
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 import scala.jdk.CollectionConverters._
-import org.http4s.implicits._
+
 /*
     Note:  Since there currently is no runnable Application as I build this thing out. I'm using the ApplicationSpec
     as a place to wire up the pieces and test them out, fix things, make changes etc.  Once I'm happy with the design
     then I can create the runnable Main
  */
-
 class ApplicationSpec
     extends AsyncWordSpec
     with AsyncIOSpec
@@ -110,7 +110,7 @@ class ApplicationSpec
       val repo = new PostgresSmartHomeEventRepo(transactor)
       val smartHomeService = new SmartHomeServiceImpl(repo, rules)
 
-      val httpServerResource = HttpServer.createServerResources(smartHomeService)
+      val httpServerResource = SmartHomeHttpServer.createServerResources(smartHomeService)
 
       val kafkaConsumer = new KafkaEventConsumer(
         server = kf.container.getBootstrapServers,
@@ -119,6 +119,7 @@ class ApplicationSpec
       )
 
       val deviceId = UUID.randomUUID()
+      val homeId = UUID.randomUUID()
       val newValue = 10
 
       val testMessage =
@@ -136,14 +137,15 @@ class ApplicationSpec
            |}
            |""".stripMargin
 
-      val setupScenarioTest1 = for {
+      // ! TODO - Create a separate scenario builder, or separate class for the preamble scenarios for readability
+      val setupScenario = for {
         _ <- publishToKafka("device-events-topic", testMessage)
         result <- kafkaConsumer
           .consumeEvent("device-events-topic")
           .evalMap { event =>
             for {
               command <- IO.fromEither(ACL.parseEvent(event))
-              result <- smartHomeService.processCommand(UUID.randomUUID(), command) // TODO How do we map the device information to the home it belongs to?
+              result <- smartHomeService.processCommand(homeId, command)
             } yield result
           }
           .take(1)
@@ -151,31 +153,20 @@ class ApplicationSpec
           .lastOrError
       } yield result
 
-      val test1 = setupScenarioTest1.unsafeToFuture().map {
-        case SmartHomeService.Success                  => succeed
-        case SmartHomeService.ResponseResult(response) => fail(s"Unexpected return type: ResponseResult $response")
-        case SmartHomeService.Failure(reason)          => fail(s"Unexpected return type: Failure $reason")
-      }
-
-      // ! - TODO Separate into different tests
-      //      test1.assertNoException
-
-      // ! - TODO Why isnt temp being returned?
-      // ! - TODO How do we map the device information to the home it belongs to?
-
-      val test2 = for {
-        _ <- setupScenarioTest1
-        _ <- httpServerResource.use { server =>
+      val test: IO[(SmartHomeResult, String)] = for {
+        setupResult <- setupScenario
+        testResult <- httpServerResource.use { server =>
           EmberClientBuilder.default[IO].build.use { client =>
-            client.expect[String](s"http://localhost:${server.address.getPort}/home/$deviceId").map { response =>
-              response should include (s"SmartHome response: Result from $deviceId: List() currentTemp: $newValue motion: MotionNotDetected")
-            }
+            client.expect[String](s"http://localhost:${server.address.getPort}/home/$homeId")
           }
         }
-      } yield ()
+      } yield (setupResult, testResult)
 
-      test2.unsafeToFuture().map(_ => succeed)
-
+      test.unsafeToFuture.map {
+        case (setupResult, testResult) =>
+          setupResult shouldBe SmartHomeService.Success
+          testResult shouldBe s"SmartHome response: Result from $homeId: Connected Devices - List(Thermostat($deviceId,10)), currentTemp: $newValue, motion: MotionNotDetected"
+      }
     }
   }
 }
