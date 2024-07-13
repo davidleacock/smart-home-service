@@ -33,7 +33,7 @@ class SmartHomeRuleEngine extends RuleEngine[Command, SmartHome, CommandResult] 
       case GetSmartHome =>
         // TODO improve this response
         Validated.valid(
-          CommandResponse(s"Result from ${state.homeId}: ${state.devices} currentTemp: ${state.currentTemperature} motion: ${state.motionState}")
+          CommandResponse(s"Result from ${state.homeId}: Connected Devices - ${state.devices}, currentTemp: ${state.currentTemperature.getOrElse("Unknown")}, motion: ${state.motionState}")
         )
     }
 }
