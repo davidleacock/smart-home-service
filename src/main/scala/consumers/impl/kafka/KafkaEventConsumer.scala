@@ -28,8 +28,8 @@ class KafkaEventConsumer(server: String, groupId: String, clientId: String) exte
       .evalTap(consumer => consumer.subscribeTo(topic))
       .flatMap(_.stream)
       .map((record: CommittableConsumerRecord[IO, String, String]) => {
-        println(s"Received: $record")
+        println(s"ConsumerRecord: $record")
         record.record.value
       })
-      .evalMap(value => IO(println(s"Received: $value")).as(value))
+      .evalMap(value => IO(println(s"Value in record: $value")).as(value))
 }
