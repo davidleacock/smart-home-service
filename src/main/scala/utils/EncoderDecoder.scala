@@ -6,7 +6,7 @@ import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
 import io.circe.parser.decode
 import io.circe.syntax.EncoderOps
 import io.circe.{Decoder, DecodingFailure, Encoder, Json}
-import service.SmartHomeService.{DeviceAdded, DeviceUpdated, Event, TemperatureSettingsSet}
+import service.SmartHomeService.{ContactInfoCreated, DeviceAdded, DeviceUpdated, Event, TemperatureSettingsSet}
 
 object EncoderDecoder {
 
@@ -29,7 +29,6 @@ object EncoderDecoder {
   implicit val motionDetectorEncoder: Encoder[MotionDetector] = deriveEncoder
   implicit val temperatureSettingsEncoder: Encoder[TemperatureSettings] = deriveEncoder
   implicit val intDVTEncoder: Encoder[IntDVT] = deriveEncoder
-
 
   implicit val encodeDeviceValueType: Encoder[DeviceValueType] = Encoder.instance {
     case IntDVT(value)    => Json.obj("type" -> Json.fromString("IntDVT"), "value" -> Json.fromInt(value))
@@ -54,6 +53,8 @@ object EncoderDecoder {
     case DeviceUpdated(device) => Json.obj("eventType" -> Json.fromString("DeviceUpdated"), "device" -> device.asJson)
     case TemperatureSettingsSet(settings) =>
       Json.obj("eventType" -> Json.fromString("TemperatureSettingsSet"), "settings" -> settings.asJson)
+    case ContactInfoCreated(contactInfo) =>
+      Json.obj("eventType" -> Json.fromString("ContactInfoCreated"), "contactInfo" -> contactInfo.asJson)
   }
 
   /* Decoders   */
@@ -81,6 +82,7 @@ object EncoderDecoder {
       case "DeviceAdded"            => cursor.get[Device]("device").map(DeviceAdded)
       case "DeviceUpdated"          => cursor.get[Device]("device").map(DeviceUpdated)
       case "TemperatureSettingsSet" => cursor.get[TemperatureSettings]("settings").map(TemperatureSettingsSet)
+      case "ContactInfoCreated"     => cursor.get[String]("contactInfo").map(ContactInfoCreated)
     }
   }
 }

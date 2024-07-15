@@ -25,9 +25,7 @@ information about the home itself. This will be achieved through a simple REST i
 `SetTemperatureSettings(min: Int, max: Int)` </p>
 
 
-## In Progress: REST endpoint for Home commands <p>
-Whereas for Device-level events (~~Add~~/Update) will be coming through kafka, the commands that are at the level of the Home will come through REST.  The user can create a SmartHome, Add Devices and set parameters (min/max temp, etc). ~~I also think I may move the AddDevice
-command to be at the home-level and simply just device changes come through kafka.~~ 
+
 
 ## Experiment with Outbox pattern to build read model <p>
 Originally I thought about just creating some database triggers to determine if changes have been made to the Write database and the project that out to build the read model but as I did some research on this I saw that the `Outbox Pattern` was seen as a good way to accomplish this so I'd like to experiment with that first. I will need to update the diagram
@@ -45,7 +43,6 @@ Originally I thought about just creating some database triggers to determine if 
 * Replace InMem implementations in integration tests with containerized versions (postgres, kakfa, etc...) ✅
 * Add some more interesting home/device rules to show the power of Validated
 * Use `Resource` for dependency injection?
-* REST endpoint for SmartHome Home-specific commands
 * Create a NotificationService so any alerts the SmartHome user can be notified (motion detected, etc)
 
 
@@ -56,3 +53,6 @@ Add postgres repo that can be used in an integration test to verify schema and c
 We're implementing the event sourcing pattern to underpin our state management approach. By capturing all state changes as events and persisting them in an event store, we create an audit trail of activities within the home. This event log is crucial for reconstructing the SmartHome state, enabling accurate processing of incoming commands.~~<p>
 ~~## In Progress: Kafka ingress consumer
 Will use protobuf to define some external event that the service will consume from via Kafka, then translate that into the SmartHome api. Currently, I'm thinking that information about devices will come through the kafka ingress like we're reading stream of data from outside devices, whereas adding devices and adding properties about the home will come through a grpc or rest endpoint?~~ <p>
+~~## In Progress: REST endpoint for Home commands 
+Whereas for Device-level events (~~Add~~/Update) will be coming through kafka, the commands that are at the level of the Home will come through REST.  The user can create a SmartHome, Add Devices and set parameters (min/max temp, etc)I also think I may move the AddDevice
+command to be at the home-level and simply just device changes come through kafka.~~ <p>

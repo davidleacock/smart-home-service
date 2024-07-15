@@ -7,7 +7,8 @@ case class SmartHome(
   devices: List[Device],
   currentTemperature: Option[Int],
   temperatureSettings: Option[TemperatureSettings],
-  motionState: MotionState)
+  motionState: MotionState,
+  contactInfo: Option[String])
 
 case class TemperatureSettings(minTemp: Int, maxTemp: Int)
 

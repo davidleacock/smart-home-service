@@ -29,7 +29,7 @@ class SmartHomeServiceImpl(
       events <- repository.retrieveEvents(homeId).compile.toList
       // Create initial SmartHome State
       // ! TODO create a SmartHome.Init (or .New .Empty?) object to clean this up
-      initialState = SmartHome(homeId, List.empty, None, None, MotionNotDetected)
+      initialState = SmartHome(homeId, List.empty, None, None, MotionNotDetected, None)
       // Replay events to build current State
       currentState = buildState(events).runS(initialState).value
       // Run the command through the rules to see if the state can process it properly
@@ -51,7 +51,7 @@ class SmartHomeServiceImpl(
       State.modify(applyEventToState(event))
     }
 
-  private def applyEventToState(event: Event): SmartHome => SmartHome = { case state @ SmartHome(_, devices, _, _, _) =>
+  private def applyEventToState(event: Event): SmartHome => SmartHome = { case state @ SmartHome(_, devices, _, _, _, contactInfo) =>
     event match {
       case DeviceAdded(device) =>
         device match {
@@ -72,6 +72,7 @@ class SmartHomeServiceImpl(
         }
 
       case TemperatureSettingsSet(temperatureSettings) => state.copy(temperatureSettings = Some(temperatureSettings))
+      case ContactInfoCreated(contactInfo) => state.copy(contactInfo = Some(contactInfo))
     }
   }
 

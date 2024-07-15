@@ -11,9 +11,11 @@ trait SmartHomeService[F[_]] {
 
 object SmartHomeService {
   sealed trait Command
+
   // SmartHome commands
   case object GetSmartHome extends Command
   case class SetTemperatureSettings(minimumTemperature: Int, maximumTemperature: Int) extends Command
+  case class SetContactInfo(contactInfo: String) extends Command
 
   sealed trait CommandResult
   case class EventSuccess(event: Event) extends CommandResult
@@ -28,6 +30,7 @@ object SmartHomeService {
   case class DeviceAdded(device: Device) extends Event
   case class DeviceUpdated(device: Device) extends Event
   case class TemperatureSettingsSet(temperatureSettings: TemperatureSettings) extends Event
+  case class ContactInfoCreated(contactInfo: String) extends Event
 
   sealed trait SmartHomeResult
   case object Success extends SmartHomeResult

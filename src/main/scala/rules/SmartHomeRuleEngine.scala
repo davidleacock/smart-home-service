@@ -33,7 +33,12 @@ class SmartHomeRuleEngine extends RuleEngine[Command, SmartHome, CommandResult] 
       case GetSmartHome =>
         // TODO improve this response
         Validated.valid(
-          CommandResponse(s"Result from ${state.homeId}: Connected Devices - ${state.devices}, currentTemp: ${state.currentTemperature.getOrElse("Unknown")}, motion: ${state.motionState}")
+          CommandResponse(s"Result from ${state.homeId}: ContactInfo: ${state.contactInfo}, Connected Devices - ${state.devices}, currentTemp: ${state.currentTemperature.getOrElse("Unknown")}, motion: ${state.motionState}")
         )
+
+      case SetContactInfo(contactInfo) =>
+        if (contactInfo.nonEmpty) {
+          Validated.valid(EventSuccess(ContactInfoCreated(contactInfo)))
+        } else Validated.invalidNec("Contact Information is blank.")
     }
 }

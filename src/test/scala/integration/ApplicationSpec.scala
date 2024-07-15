@@ -165,7 +165,7 @@ class ApplicationSpec
       test.unsafeToFuture.map {
         case (setupResult, testResult) =>
           setupResult shouldBe SmartHomeService.Success
-          testResult shouldBe s"SmartHome response: Result from $homeId: Connected Devices - List(Thermostat($deviceId,10)), currentTemp: $newValue, motion: MotionNotDetected"
+          testResult shouldBe s"SmartHome response: Result from $homeId: ContactInfo: None, Connected Devices - List(Thermostat($deviceId,10)), currentTemp: $newValue, motion: MotionNotDetected"
       }
     }
   }
