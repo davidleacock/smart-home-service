@@ -6,7 +6,10 @@ import cats.effect.IO
 import cats.implicits.toFoldableOps
 import domain.MotionState.{MotionDetected, MotionNotDetected}
 import domain._
-import repo.SmartHomeEventRepository
+import doobie.util.transactor.Transactor
+import doobie.implicits._
+import repo.impl.postgres.{PostgresOutbox, PostgresSmartHomeEventRepo}
+import repo.{Outbox, SmartHomeEventRepository}
 import rules.SmartHomeRuleEngine
 import service.SmartHomeService
 import service.SmartHomeService._
@@ -14,8 +17,10 @@ import service.SmartHomeService._
 import java.util.UUID
 
 class SmartHomeServiceImpl(
-  repository: SmartHomeEventRepository[IO],
-  ruleEngine: SmartHomeRuleEngine)
+                            smartHomeRepo: PostgresSmartHomeEventRepo,
+                            outbox: PostgresOutbox,
+                            xa: Transactor[IO],
+                            ruleEngine: SmartHomeRuleEngine)
     extends SmartHomeService[IO] {
 
   override def processCommand(
@@ -26,7 +31,8 @@ class SmartHomeServiceImpl(
       // Retrieve list of events from repo
       // ! TODO Now that the repo is streamed from this needs to be wired directly so I can remove the compile.toList part
       // ? What happens if the list is empty? What is empty Home vs new Home?
-      events <- repository.retrieveEvents(homeId).compile.toList
+      // ? Is it ok to have the transact here? Need to handle errors
+      events <- smartHomeRepo.retrieveEvents(homeId).transact(xa).compile.toList
       // Create initial SmartHome State
       // ! TODO create a SmartHome.Init (or .New .Empty?) object to clean this up
       initialState = SmartHome(homeId, List.empty, None, None, MotionNotDetected, None)
@@ -37,7 +43,20 @@ class SmartHomeServiceImpl(
       result <- ruleEngine.validate(command, currentState) match {
         case Valid(cmdResult) =>
           cmdResult match {
-            case EventSuccess(event) => repository.persistEvent(homeId, event).as(Success) // TODO handle errors from the repo
+            // ! TODO transactionally persist to Outbox, test as well.
+            case EventSuccess(event) =>
+
+              val transaction = for {
+                _ <- smartHomeRepo.persistEvent(homeId, event) // TODO handle errors from the repo
+                _ <- outbox.persistEvent(homeId, event)
+              } yield Success
+
+              // TODO - run the transaction, transactionally and if there is an outbox or repo failure
+              // we need to handle that gracefully
+              transaction.transact(xa).handleErrorWith { err =>
+                IO.pure(Failure(s"Failed to process command due to repo error: $err"))
+              }
+
             case CommandResponse(payload) => IO.pure(ResponseResult(payload))
             case CommandFailed(reason)    => IO.pure(Failure(reason))
           }

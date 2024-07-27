@@ -1,15 +1,16 @@
 package repo.impl.postgres
 
-import doobie.ConnectionIO
+import cats.effect.IO
+import doobie.{ConnectionIO, Transactor}
 import doobie.implicits._
-import fs2.Stream
 import io.circe.syntax.EncoderOps
-import repo.SmartHomeEventRepository
+import repo.{Outbox, SmartHomeEventRepository}
 import service.SmartHomeService.Event
+import fs2.Stream
 
 import java.util.UUID
 
-class PostgresSmartHomeEventRepo extends SmartHomeEventRepository[ConnectionIO] {
+class PostgresOutbox extends Outbox[ConnectionIO]{
 
   import utils.EncoderDecoder._
 
@@ -25,14 +26,4 @@ class PostgresSmartHomeEventRepo extends SmartHomeEventRepository[ConnectionIO] 
       .update
       .run
   }
-
-  override def retrieveEvents(homeId: UUID): Stream[ConnectionIO, Event] = {
-    sql"""
-         SELECT event_data FROM events WHERE home_id = ${homeId.toString}
-       """
-      .query[Event]
-      .stream
-  }
 }
-
-
